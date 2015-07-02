@@ -73,16 +73,10 @@ func (cli *CLI) Run(args []string) int {
 		}
 	}
 
-	// Check file exist or not
-	// TODO: -force option
-	if _, err := os.Stat(output); !os.IsNotExist(err) {
-		fmt.Fprintf(cli.errStream, "Cannot create file %q: file exists\n", output)
-		return ExitCodeError
-	}
-
-	client := github.NewClient(nil)
-
 	if *flList {
+
+		client := github.NewClient(nil)
+
 		Debugf("Show list of LICENSE")
 		list, res, err := client.Licenses.List()
 		if err != nil {
@@ -122,7 +116,15 @@ func (cli *CLI) Run(args []string) int {
 		key = parsedArgs[0]
 	}
 
+	// Check file exist or not
+	// TODO: -force option
+	if _, err := os.Stat(output); !os.IsNotExist(err) {
+		fmt.Fprintf(cli.errStream, "Cannot create file %q: file exists\n", output)
+		return ExitCodeError
+	}
+
 	Debugf("Get license by key: %s", key)
+	client := github.NewClient(nil)
 	license, res, err := client.Licenses.Get(key)
 	if err != nil {
 		fmt.Fprintf(cli.errStream, "Failed to fetch LICENSE: %s\n", err.Error())
