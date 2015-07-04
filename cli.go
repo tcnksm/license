@@ -7,7 +7,8 @@ import (
 	"io"
 	"net/http"
 	"os"
-
+	"os/signal"
+	"strconv"
 	"strings"
 
 	"github.com/google/go-github/github"
@@ -85,7 +86,7 @@ func (cli *CLI) Run(args []string) int {
 		}
 
 		if res.StatusCode != http.StatusOK {
-			fmt.Fprintf(cli.errStream, "Invalidd status code from GitHub\n %s\n", res.String())
+			fmt.Fprintf(cli.errStream, "Invalid status code from GitHub\n %s\n", res.String())
 			return ExitCodeError
 		}
 
@@ -104,23 +105,98 @@ func (cli *CLI) Run(args []string) int {
 		return ExitCodeOK
 	}
 
+	// Check file exist or not
+	// TODO: -force option
+	if _, err := os.Stat(output); !os.IsNotExist(err) {
+		fmt.Fprintf(cli.errStream, "Cannot create file %q: file exists\n", output)
+		return ExitCodeError
+	}
+
 	parsedArgs := flags.Args()
 	if len(parsedArgs) > 1 {
 		fmt.Fprintf(cli.errStream, "Invalid arguments")
 		return ExitCodeError
 	}
 
-	// TODO, select key from list
 	var key string
 	if len(parsedArgs) == 1 {
 		key = parsedArgs[0]
+		// Every key must be lower case
+		key = strings.ToLower(key)
 	}
 
-	// Check file exist or not
-	// TODO: -force option
-	if _, err := os.Stat(output); !os.IsNotExist(err) {
-		fmt.Fprintf(cli.errStream, "Cannot create file %q: file exists\n", output)
-		return ExitCodeError
+	// Ask user to select license
+	if len(key) == 0 {
+		client := github.NewClient(nil)
+
+		Debugf("Show list of LICENSE")
+		list, res, err := client.Licenses.List()
+		if err != nil {
+			fmt.Fprintf(cli.errStream, "Failed to fetch LICENSE list: %s\n", err.Error())
+			return ExitCodeError
+		}
+
+		if res.StatusCode != http.StatusOK {
+			fmt.Fprintf(cli.errStream, "Invalid status code from GitHub\n %s\n", res.String())
+			return ExitCodeError
+		}
+
+		var buf bytes.Buffer
+		buf.WriteString("Choose LICENSE\n")
+		for i, l := range list {
+			fmt.Fprintf(&buf, "  %2d) %s\n", i+1, *l.Name)
+		}
+
+		fmt.Fprintf(cli.errStream, buf.String())
+
+		sigCh := make(chan os.Signal, 1)
+		signal.Notify(sigCh, os.Interrupt)
+		defer signal.Stop(sigCh)
+
+		result := make(chan int, 1)
+		go func() {
+			for {
+
+				defaultChoice := 1
+				fmt.Fprintf(cli.errStream, "Your choice? [default: %d] ", defaultChoice)
+
+				var line string
+				if _, err := fmt.Fscanln(os.Stdin, &line); err != nil {
+					Debugf("Failed to scan stdin: %s", err.Error())
+				}
+
+				Debugf("Input: %s", line)
+
+				// Use Default value
+				if line == "" {
+					result <- defaultChoice
+					break
+				}
+
+				n, err := strconv.Atoi(line)
+				if err != nil {
+					fmt.Fprintf(cli.errStream, " is not a valid choice. Choose by number.\n")
+					continue
+				}
+
+				if n < 1 || len(list) < n {
+					fmt.Fprintf(cli.errStream, " is not a valid choice. Choose from 1 to %d\n", len(list))
+					continue
+				}
+
+				result <- n
+				break
+			}
+		}()
+
+		select {
+		case <-sigCh:
+			fmt.Fprintf(cli.errStream, "Interrupted\n")
+			return ExitCodeError
+		case num := <-result:
+			key = *(list[num-1]).Key
+			Debugf("Select: %s", key)
+		}
 	}
 
 	Debugf("Get license by key: %s", key)
@@ -157,7 +233,7 @@ func (cli *CLI) Run(args []string) int {
 	}
 	Debugf("Written: %d", i)
 
-	fmt.Fprintf(cli.outStream, "Successfully generated %q \n", licenseName)
+	fmt.Fprintf(cli.outStream, "Successfully generated %q LICENSE file\n", licenseName)
 	return ExitCodeOK
 }
 
