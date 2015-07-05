@@ -68,14 +68,17 @@ func (cli *CLI) Run(args []string) int {
 	// Set Debug environmental variable
 	if *flDebug {
 		os.Setenv(EnvDebug, "1")
+		Debugf("Run as DEBUG mode")
 	}
 
 	// Show list of LICENSE and quit
 	if *flList {
+		Debugf("Show list of LICENSE")
 
+		// Create default client
 		client := github.NewClient(nil)
 
-		Debugf("Show list of LICENSE")
+		// Fetch list from Github API
 		list, res, err := client.Licenses.List()
 		if err != nil {
 			fmt.Fprintf(cli.errStream, "Failed to fetch LICENSE list: %s\n", err.Error())
@@ -87,6 +90,7 @@ func (cli *CLI) Run(args []string) int {
 			return ExitCodeError
 		}
 
+		// Write LICENSE list as a table
 		outBuffer := new(bytes.Buffer)
 		table := tablewriter.NewWriter(outBuffer)
 
@@ -104,7 +108,7 @@ func (cli *CLI) Run(args []string) int {
 		return ExitCodeOK
 	}
 
-	// Check file exist or not. TODO: -force option
+	// Check file exist or not
 	if _, err := os.Stat(output); !os.IsNotExist(err) {
 		fmt.Fprintf(cli.errStream, "Cannot create file %q: file exists\n", output)
 		return ExitCodeError
@@ -123,20 +127,25 @@ func (cli *CLI) Run(args []string) int {
 		key = strings.ToLower(key)
 	}
 
-	// Choose LICENSE like http://choosealicense.com/
+	// Choose a LICENSE like http://choosealicense.com/
 	if len(key) == 0 && *flChoose {
+		Debugf("Choose a LICENSE like http://choosealicense.com/")
 		var err error
 		key, err = cli.Choose()
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "Failed to choose LICENSE: %s\n", err.Error())
+			fmt.Fprintf(cli.errStream, "Failed to choose a LICENSE: %s\n", err.Error())
 			return ExitCodeError
 		}
 	}
 
 	// Show all LICENSE available and ask user to select.
 	if len(key) == 0 {
+		Debugf("Show all LICENSE available and ask user to select")
 
+		// Create default client
 		client := github.NewClient(nil)
+
+		// Fetch list of LICENSE from Github API
 		list, res, err := client.Licenses.List()
 		if err != nil {
 			fmt.Fprintf(cli.errStream, "Failed to fetch LICENSE list: %s\n", err.Error())
@@ -165,7 +174,11 @@ func (cli *CLI) Run(args []string) int {
 	}
 
 	Debugf("Get license by key: %s", key)
+
+	// Create default client
 	client := github.NewClient(nil)
+
+	// Fetch a LICENSE from Github API
 	license, res, err := client.Licenses.Get(key)
 	if err != nil {
 		fmt.Fprintf(cli.errStream, "Failed to fetch LICENSE: %s\n", err.Error())
