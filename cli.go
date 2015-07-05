@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/github"
+	"github.com/mitchellh/colorstring"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -36,7 +37,6 @@ type CLI struct {
 // Run invokes the CLI with the given arguments.
 func (cli *CLI) Run(args []string) int {
 
-	var LicenseInfo LicenseInfo
 	var output string
 
 	// Define option flag parse
@@ -46,11 +46,10 @@ func (cli *CLI) Run(args []string) int {
 		fmt.Fprintf(cli.errStream, helpText)
 	}
 
-	flags.StringVar(&LicenseInfo.Author, "author", "", "")
 	flags.StringVar(&output, "output", DefaultOutput, "")
 
 	flList := flags.Bool("list", false, "")
-	// flChoose := flags.Bool("choose", false, "")
+	flChoose := flags.Bool("choose", false, "")
 
 	flDebug := flags.Bool("debug", false, "")
 	flVersion := flags.Bool("version", false, "")
@@ -68,12 +67,10 @@ func (cli *CLI) Run(args []string) int {
 
 	// Set Debug environmental variable
 	if *flDebug {
-		if err := os.Setenv(EnvDebug, "1"); err != nil {
-			// Should not reach here
-			panic(err)
-		}
+		os.Setenv(EnvDebug, "1")
 	}
 
+	// Show list of LICENSE and quit
 	if *flList {
 
 		client := github.NewClient(nil)
@@ -101,12 +98,13 @@ func (cli *CLI) Run(args []string) int {
 		}
 		table.Render()
 
+		outBuffer.WriteString("See more about these LICENSE at http://choosealicense.com/licenses/\n")
 		fmt.Fprintf(cli.outStream, outBuffer.String())
+
 		return ExitCodeOK
 	}
 
-	// Check file exist or not
-	// TODO: -force option
+	// Check file exist or not. TODO: -force option
 	if _, err := os.Stat(output); !os.IsNotExist(err) {
 		fmt.Fprintf(cli.errStream, "Cannot create file %q: file exists\n", output)
 		return ExitCodeError
@@ -114,7 +112,7 @@ func (cli *CLI) Run(args []string) int {
 
 	parsedArgs := flags.Args()
 	if len(parsedArgs) > 1 {
-		fmt.Fprintf(cli.errStream, "Invalid arguments")
+		fmt.Fprintf(cli.errStream, "Invalid arguments\n")
 		return ExitCodeError
 	}
 
@@ -125,11 +123,20 @@ func (cli *CLI) Run(args []string) int {
 		key = strings.ToLower(key)
 	}
 
-	// Ask user to select license
-	if len(key) == 0 {
-		client := github.NewClient(nil)
+	// Choose LICENSE like http://choosealicense.com/
+	if len(key) == 0 && *flChoose {
+		var err error
+		key, err = cli.Choose()
+		if err != nil {
+			fmt.Fprintf(cli.errStream, "Failed to choose LICENSE: %s\n", err.Error())
+			return ExitCodeError
+		}
+	}
 
-		Debugf("Show list of LICENSE")
+	// Show all LICENSE available and ask user to select.
+	if len(key) == 0 {
+
+		client := github.NewClient(nil)
 		list, res, err := client.Licenses.List()
 		if err != nil {
 			fmt.Fprintf(cli.errStream, "Failed to fetch LICENSE list: %s\n", err.Error())
@@ -142,61 +149,19 @@ func (cli *CLI) Run(args []string) int {
 		}
 
 		var buf bytes.Buffer
-		buf.WriteString("Choose LICENSE\n")
+		buf.WriteString("Which of the following do you want to use?\n")
 		for i, l := range list {
 			fmt.Fprintf(&buf, "  %2d) %s\n", i+1, *l.Name)
 		}
-
 		fmt.Fprintf(cli.errStream, buf.String())
 
-		sigCh := make(chan os.Signal, 1)
-		signal.Notify(sigCh, os.Interrupt)
-		defer signal.Stop(sigCh)
-
-		result := make(chan int, 1)
-		go func() {
-			for {
-
-				defaultChoice := 1
-				fmt.Fprintf(cli.errStream, "Your choice? [default: %d] ", defaultChoice)
-
-				var line string
-				if _, err := fmt.Fscanln(os.Stdin, &line); err != nil {
-					Debugf("Failed to scan stdin: %s", err.Error())
-				}
-
-				Debugf("Input: %s", line)
-
-				// Use Default value
-				if line == "" {
-					result <- defaultChoice
-					break
-				}
-
-				n, err := strconv.Atoi(line)
-				if err != nil {
-					fmt.Fprintf(cli.errStream, " is not a valid choice. Choose by number.\n")
-					continue
-				}
-
-				if n < 1 || len(list) < n {
-					fmt.Fprintf(cli.errStream, " is not a valid choice. Choose from 1 to %d\n", len(list))
-					continue
-				}
-
-				result <- n
-				break
-			}
-		}()
-
-		select {
-		case <-sigCh:
-			fmt.Fprintf(cli.errStream, "Interrupted\n")
+		num, err := cli.AskNumber(len(list), 1)
+		if err != nil {
+			fmt.Fprintf(cli.errStream, "Failed to scan user input: %s\n", err.Error())
 			return ExitCodeError
-		case num := <-result:
-			key = *(list[num-1]).Key
-			Debugf("Select: %s", key)
 		}
+
+		key = *(list[num-1]).Key
 	}
 
 	Debugf("Get license by key: %s", key)
@@ -233,9 +198,140 @@ func (cli *CLI) Run(args []string) int {
 	}
 	Debugf("Written: %d", i)
 
-	fmt.Fprintf(cli.outStream, "Successfully generated %q LICENSE file\n", licenseName)
+	fmt.Fprintf(cli.outStream, "Successfully generated %q LICENSE\n", licenseName)
+
 	return ExitCodeOK
 }
+
+// AskNumber asks user to choose number from 1 to max
+func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt)
+	defer signal.Stop(sigCh)
+
+	result := make(chan int, 1)
+	go func() {
+		for {
+
+			fmt.Fprintf(cli.errStream, "Your choice? [default: %d] ", defaultNum)
+
+			var line string
+			if _, err := fmt.Fscanln(os.Stdin, &line); err != nil {
+				Debugf("Failed to scan stdin: %s", err.Error())
+			}
+
+			Debugf("Input: %s", line)
+
+			// Use Default value
+			if line == "" {
+				result <- defaultNum
+				break
+			}
+
+			// Convert string to int
+			n, err := strconv.Atoi(line)
+			if err != nil {
+				fmt.Fprintf(cli.errStream, "  is not a valid choice. Choose by number.\n\n")
+				continue
+			}
+
+			// Check input is in range
+			if n < 1 || max < n {
+				fmt.Fprintf(cli.errStream, "  is not a valid choice. Choose from 1 to %d\n\n", max)
+				continue
+			}
+
+			result <- n
+			break
+		}
+	}()
+
+	select {
+	case <-sigCh:
+		return -1, fmt.Errorf("interrupted")
+	case num := <-result:
+		return num, nil
+	}
+}
+
+// Choose shows shows LICENSE description from http://choosealicense.com/
+// And ask user to choose LICENSE. It returns key to fetch LICENSE file.
+// If something is wrong, return error.
+func (cli *CLI) Choose() (string, error) {
+	colorstring.Fprintf(cli.errStream, chooseText)
+
+	num, err := cli.AskNumber(4, 1)
+	if err != nil {
+		return "", err
+	}
+	fmt.Fprintf(cli.errStream, "\n")
+
+	// If user selects 3, should ask user GPL V2 or V3
+	if num == 3 {
+		var buf bytes.Buffer
+		buf.WriteString("Which version do you want?\n")
+		buf.WriteString("  1) V2\n")
+		buf.WriteString("  2) V3\n")
+		fmt.Fprintf(cli.errStream, buf.String())
+
+		num, err = cli.AskNumber(2, 1)
+		if err != nil {
+			return "", err
+		}
+		num += 4
+	}
+
+	var key string
+	switch num {
+	case 1:
+		key = "mit"
+	case 2:
+		key = "apache-2.0"
+	case 4:
+		key = ""
+	case 5:
+		key = "gpl-2.0"
+	case 6:
+		key = "gpl-3.0"
+	default:
+		// Should not reach here
+		panic("Invalid number")
+	}
+
+	return key, nil
+}
+
+var chooseText = `Choose LICENSE like http://choosealicense.com/
+
+  [blue]Choosing an OSS license doesn't need to be scary[reset]
+
+Which of the following best describes your situation?
+
+  1) I want it simple and permissive.
+
+    The [red][bold]MIT License[reset] is a permissive license that is short and to the
+    point. It lets people do anything they want with your code as long as they
+    provide attribution back to you and don't hold you liable.
+    e.g., jQuery, Rails
+
+  2) I'm concerned about patents.
+
+    The [red][bold]Apache License[reset] (apache-2.0) is a permissive license similar to the MIT License,
+    but also provides an express grant of patent rights from contributors to users.
+    e.g., Apache, SVN, NuGet
+
+  3) I care about sharing improvements.
+
+    The [red][bold]GPL V2[reset] (gpl-2.0) or [red][bold]GPL V3[reset] (gpl-3.0) is a copyleft license that requires
+    anyone who distributes your code or a derivative work to make the source available under
+    the same terms. V3 is similar to V2, but further restricts use in hardware that forbids
+    software alterations.
+    e.g., Linux, Git, WordPress
+
+  4) I want more choices.
+
+`
 
 var helpText = `Usage: license [option] [KEY]
 
@@ -246,7 +342,10 @@ var helpText = `Usage: license [option] [KEY]
 Options:
 
   -list               Show all avairable LICENSE list and quit.
-                      It will fetch information from GitHub. 
+                      It will fetch information from GitHub.
+
+  -choose             Choose LICENSE like http://choosealicense.com/
+                      It shows you which LICENSE is useful for you. 
 
   -output=NAME        Change output file name.
                       By default, output file name is 'LICENSE'
