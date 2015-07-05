@@ -3,6 +3,7 @@
 List of TODOs before release
 
 - `README.md`
+- `go-latest`
 - Add `-force` option
 - Generate all LICENSE and check where to replace
 - Replace function
