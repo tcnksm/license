@@ -7,13 +7,14 @@ If you have feature request, please open issues or send pull request.
 
 Before release 
 
-- `README.md`
-- **TODO**: `go-latest`
+- More `README.md`
 - Generate all LICENSE and check where to replace
 - Replace function
 - `-author`, `-email`
 - Dockerfile to build binary and release it to Github Release
 - Homebrew formula
+- **DONE**: Fix `-output` to set directory
+- **DONE**: `go-latest`
 
 ## 0.1.1
 

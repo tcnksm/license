@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -209,9 +210,16 @@ func (cli *CLI) Run(args []string) int {
 	Debugf("Fetched license body:\n\n%s", licenseBody)
 
 	r := strings.NewReader(licenseBody)
+
+	dir, _ := filepath.Split(output)
+	if len(dir) != 0 {
+		os.MkdirAll(dir, 0777)
+	}
+
 	w, err := os.Create(output)
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(cli.errStream, "Failed to create file %s: %s\n", output, err.Error())
+		return ExitCodeError
 	}
 	defer w.Close()
 	Debugf("Output filename: %s", output)
