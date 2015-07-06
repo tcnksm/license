@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/github"
 	"github.com/mitchellh/colorstring"
@@ -61,7 +62,18 @@ func (cli *CLI) Run(args []string) int {
 
 	// Show version
 	if *flVersion {
+
 		fmt.Fprintf(cli.errStream, "%s version %s\n", Name, Version)
+		select {
+		case <-time.After(CheckTimeout):
+			// Do nothing
+		case res := <-verCheckCh:
+			if res != nil {
+				msg := fmt.Sprintf("Latest version of license is %s, please update it\n", res.Current)
+				fmt.Fprint(cli.errStream, msg)
+			}
+		}
+
 		return ExitCodeOK
 	}
 
