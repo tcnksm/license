@@ -197,6 +197,10 @@ func (cli *CLI) Run(args []string) int {
 		if err != nil {
 			Debugf("Failed to get cache: %s", err.Error())
 		}
+
+		if r != nil {
+			fmt.Fprintf(cli.errStream, "Use cache\n")
+		}
 	}
 
 	// If cache is not exist, fetch it from GitHub

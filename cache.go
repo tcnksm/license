@@ -60,7 +60,6 @@ func getCache(key, path string) (io.Reader, error) {
 		return nil, fmt.Errorf("cache file is old")
 	}
 
-	Debugf("Use Cache: %s", cache)
 	return os.OpenFile(cache, os.O_RDONLY, 0777)
 }
 
