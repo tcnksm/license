@@ -238,12 +238,11 @@ func (cli *CLI) Run(args []string) int {
 		w = licenseWriter
 	}
 
-	i, err := io.Copy(w, r)
-	if i < 0 || err != nil {
-		fmt.Fprintf(cli.errStream, "Failed to write license body to %q: %s\n", output)
+	_, err = io.Copy(w, r)
+	if err != nil {
+		fmt.Fprintf(cli.errStream, "Failed to write license body to %q: %s\n", output, err.Error())
 		return ExitCodeError
 	}
-	Debugf("Written: %d", i)
 
 	fmt.Fprintf(cli.outStream, "Successfully generated %q LICENSE\n", key)
 	return ExitCodeOK
