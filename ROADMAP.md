@@ -8,6 +8,7 @@ If you have feature request, please open issues or send pull request.
 Before release 
 
 - More `README.md`
+- test (for cache)
 - Generate all LICENSE and check where to replace
 - Replace function
 - `-author`, `-email`
