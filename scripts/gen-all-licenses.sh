@@ -10,7 +10,10 @@ rm -fr ${OUTDIR}
 mkdir ${OUTDIR}
 
 make build
-./bin/license -list-keys \
-    | xargs -P 3 -I {} ./bin/license -output=${OUTDIR}/{} -no-cache {} 
+for key in $(./bin/license -list-keys); do
+    ./bin/license -output=${OUTDIR}/${key} -no-cache ${key}
+    sleep 10s
+done
 
 ls ${OUTDIR}
+
