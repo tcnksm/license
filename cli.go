@@ -15,6 +15,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/mitchellh/colorstring"
+	"github.com/mitchellh/go-homedir"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -22,6 +23,7 @@ import (
 const (
 	ExitCodeOK    int = 0
 	ExitCodeError int = 1 + iota
+	ExitCodeErrorCache
 )
 
 const (
@@ -40,6 +42,7 @@ type CLI struct {
 func (cli *CLI) Run(args []string) int {
 
 	var output string
+	var useCache bool
 
 	// Define option flag parse
 	flags := flag.NewFlagSet(Name, flag.ContinueOnError)
@@ -49,6 +52,7 @@ func (cli *CLI) Run(args []string) int {
 	}
 
 	flags.StringVar(&output, "output", DefaultOutput, "")
+	flags.BoolVar(&useCache, "no-cache", true, "")
 
 	flList := flags.Bool("list", false, "")
 	flChoose := flags.Bool("choose", false, "")
@@ -155,18 +159,9 @@ func (cli *CLI) Run(args []string) int {
 	if len(key) == 0 {
 		Debugf("Show all LICENSE available and ask user to select")
 
-		// Create default client
-		client := github.NewClient(nil)
-
-		// Fetch list of LICENSE from Github API
-		list, res, err := client.Licenses.List()
+		list, err := fetchLicenseList()
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "Failed to fetch LICENSE list: %s\n", err.Error())
-			return ExitCodeError
-		}
-
-		if res.StatusCode != http.StatusOK {
-			fmt.Fprintf(cli.errStream, "Invalid status code from GitHub\n %s\n", res.String())
+			fmt.Fprintf(cli.errStream, "Failed to show LICENSE list: %s", err.Error())
 			return ExitCodeError
 		}
 
@@ -186,43 +181,62 @@ func (cli *CLI) Run(args []string) int {
 		key = *(list[num-1]).Key
 	}
 
-	Debugf("Get license by key: %s", key)
-
-	// Create default client
-	client := github.NewClient(nil)
-
-	// Fetch a LICENSE from Github API
-	license, res, err := client.Licenses.Get(key)
+	home, err := homedir.Dir()
 	if err != nil {
-		fmt.Fprintf(cli.errStream, "Failed to fetch LICENSE: %s\n", err.Error())
-		return ExitCodeError
+		Debugf("Faild to get home directory: %s", err.Error())
+		useCache = false
+		home = "."
+	}
+	cacheDir := filepath.Join(home, CacheDirName)
+
+	// By default useCache is true and check cache is exist or not
+	var r io.Reader
+	if useCache {
+		var err error
+		r, err = getCache(key, cacheDir)
+		if err != nil {
+			Debugf("Failed to get cache: %s", err.Error())
+		}
 	}
 
-	if res.StatusCode != http.StatusOK {
-		fmt.Fprintf(cli.errStream, "Invalidd status code from GitHub\n %s\n", res.String())
-		return ExitCodeError
+	// If cache is not exist, fetch it from GitHub
+	var fetched bool = false
+	if r == nil {
+		var err error
+		r, err = fetchLicense(key)
+		if err != nil {
+			fmt.Fprintf(cli.errStream, "Failed to get LICENSE file: %s\n", err.Error())
+			return ExitCodeError
+		}
+		fetched = true
 	}
 
-	licenseName := *license.Name
-	Debugf("Fetched license name: %s", licenseName)
-
-	licenseBody := *license.Body
-	Debugf("Fetched license body:\n\n%s", licenseBody)
-
-	r := strings.NewReader(licenseBody)
-
+	// Create output path if it is not exist
 	dir, _ := filepath.Split(output)
 	if len(dir) != 0 {
 		os.MkdirAll(dir, 0777)
 	}
 
-	w, err := os.Create(output)
+	licenseWriter, err := os.Create(output)
 	if err != nil {
 		fmt.Fprintf(cli.errStream, "Failed to create file %s: %s\n", output, err.Error())
 		return ExitCodeError
 	}
-	defer w.Close()
+	defer licenseWriter.Close()
 	Debugf("Output filename: %s", output)
+
+	var w io.Writer
+	if fetched && useCache {
+		// if new LICESE file is fetched from GitHub
+		// Create new cache file for it
+		cacheWriter, err := newCache(key, cacheDir)
+		if err == nil {
+			defer cacheWriter.Close()
+			w = io.MultiWriter(licenseWriter, cacheWriter)
+		}
+	} else {
+		w = licenseWriter
+	}
 
 	i, err := io.Copy(w, r)
 	if i < 0 || err != nil {
@@ -231,8 +245,7 @@ func (cli *CLI) Run(args []string) int {
 	}
 	Debugf("Written: %d", i)
 
-	fmt.Fprintf(cli.outStream, "Successfully generated %q LICENSE\n", licenseName)
-
+	fmt.Fprintf(cli.outStream, "Successfully generated %q LICENSE\n", key)
 	return ExitCodeOK
 }
 
@@ -254,7 +267,7 @@ func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
 				Debugf("Failed to scan stdin: %s", err.Error())
 			}
 
-			Debugf("Input: %s", line)
+			Debugf("Input: %q", line)
 
 			// Use Default value
 			if line == "" {
@@ -298,11 +311,11 @@ func (cli *CLI) Choose() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Fprintf(cli.errStream, "\n")
 
 	// If user selects 3, should ask user GPL V2 or V3
 	if num == 3 {
 		var buf bytes.Buffer
+		buf.WriteString("\n")
 		buf.WriteString("Which version do you want?\n")
 		buf.WriteString("  1) V2\n")
 		buf.WriteString("  2) V3\n")
@@ -382,5 +395,7 @@ Options:
 
   -output=NAME        Change output file name.
                       By default, output file name is 'LICENSE'
+
+  -no-chache          Not use local cache.
 
 `

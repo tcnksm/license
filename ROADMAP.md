@@ -13,6 +13,7 @@ Before release
 - `-author`, `-email`
 - Dockerfile to build binary and release it to Github Release
 - Homebrew formula
+- **DONE**: Cache function
 - **DONE**: Fix `-output` to set directory
 - **DONE**: `go-latest`
 
