@@ -14,5 +14,11 @@ install: deps
 test: build
 	./scripts/test.sh
 
+package: deps
+	./scripts/package.sh
+
+package-docker:
+	./scripts/package-docker.sh
+
 test-docker:
 	./scripts/test-docker.sh
