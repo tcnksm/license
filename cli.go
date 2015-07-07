@@ -60,6 +60,9 @@ func (cli *CLI) Run(args []string) int {
 	flDebug := flags.Bool("debug", false, "")
 	flVersion := flags.Bool("version", false, "")
 
+	// This is only for dev (and test)
+	flListkeys := flags.Bool("list-keys", false, "")
+
 	// Parse commandline flag
 	if err := flags.Parse(args[1:]); err != nil {
 		return ExitCodeError
@@ -89,7 +92,7 @@ func (cli *CLI) Run(args []string) int {
 	}
 
 	// Show list of LICENSE and quit
-	if *flList {
+	if *flList || *flListkeys {
 		Debugf("Show list of LICENSE")
 
 		// Create default client
@@ -105,6 +108,16 @@ func (cli *CLI) Run(args []string) int {
 		if res.StatusCode != http.StatusOK {
 			fmt.Fprintf(cli.errStream, "Invalid status code from GitHub\n %s\n", res.String())
 			return ExitCodeError
+		}
+
+		// List LICENSE keys (name used when fetching)
+		// This is only for dev(testing)
+		if *flListkeys {
+			Debugf("List LICENSE keys")
+			for _, l := range list {
+				fmt.Fprintf(cli.outStream, "%s\n", *l.Key)
+			}
+			return ExitCodeOK
 		}
 
 		// Write LICENSE list as a table
