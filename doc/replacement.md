@@ -4,7 +4,7 @@ This is replacement rule of LICENSE file
 
 | Key           |   |   |   |   |
 |---|---|---|---|---|
-| agpl-3.0      |   |   |   |   |
+| agpl-3.0      |`<year>`|`<name of author>`|   |`<one line to give the program's name and a brief idea of what it does.>`|
 | apache-2.0    |`{yyyy}`|`{name of copyright owner}`|   |   |
 | artistic-2.0  |`[year]`|`[fullname]`|   |   |
 | bsd-2-clause  |`[year]`|`[fullname]`|   |   |
