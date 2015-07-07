@@ -8,7 +8,7 @@ This is replacement rule of LICENSE file
 | apache-2.0    |`{yyyy}`|`{name of copyright owner}`|   |   |
 | artistic-2.0  |`[year]`|`[fullname]`|   |   |
 | bsd-2-clause  |`[year]`|`[fullname]`|   |   |
-| bsd-3-clause  |`[year]`|`[fullname]`|   |   |
+| bsd-3-clause  |`[year]`|`[fullname]`|   |` [project]`|
 | cc0-1.0       |   |   |   |   |
 | epl-1.0       |   |   |   |   |
 | gpl-2.0       |`{year}`|`{fullname}`||`{description}`,`{signature of Ty Coon}`|
