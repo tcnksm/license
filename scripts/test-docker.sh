@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+DIR=$(cd $(dirname ${0})/.. && pwd)
+cd ${DIR}
+
 ORG_PATH="github.com/tcnksm"
 REPO_PATH="${ORG_PATH}/license"
 
