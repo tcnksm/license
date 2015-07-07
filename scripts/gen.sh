@@ -6,7 +6,12 @@ DIR=$(cd $(dirname ${0})/.. && pwd)
 cd ${DIR}
 
 OUTDIR="test-licenses"
-rm -fr ${OUTDIR}
+
+if [ -d ${OUTDIR} ]; then
+    echo "${OUTDIR} is already exist"
+    exit 1
+fi
+
 mkdir ${OUTDIR}
 
 make build
