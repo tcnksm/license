@@ -42,7 +42,7 @@ type CLI struct {
 func (cli *CLI) Run(args []string) int {
 
 	var output string
-	var useCache bool
+	var noCache bool
 
 	// Define option flag parse
 	flags := flag.NewFlagSet(Name, flag.ContinueOnError)
@@ -52,7 +52,7 @@ func (cli *CLI) Run(args []string) int {
 	}
 
 	flags.StringVar(&output, "output", DefaultOutput, "")
-	flags.BoolVar(&useCache, "no-cache", true, "")
+	flags.BoolVar(&noCache, "no-cache", false, "")
 
 	flList := flags.Bool("list", false, "")
 	flChoose := flags.Bool("choose", false, "")
@@ -184,22 +184,18 @@ func (cli *CLI) Run(args []string) int {
 	home, err := homedir.Dir()
 	if err != nil {
 		Debugf("Faild to get home directory: %s", err.Error())
-		useCache = false
+		noCache = true
 		home = "."
 	}
 	cacheDir := filepath.Join(home, CacheDirName)
 
-	// By default useCache is true and check cache is exist or not
+	// By default noCache is false (useCache) and check cache is exist or not
 	var r io.Reader
-	if useCache {
+	if !noCache {
 		var err error
 		r, err = getCache(key, cacheDir)
 		if err != nil {
 			Debugf("Failed to get cache: %s", err.Error())
-		}
-
-		if r != nil {
-			fmt.Fprintf(cli.errStream, "Use cache\n")
 		}
 	}
 
@@ -230,7 +226,7 @@ func (cli *CLI) Run(args []string) int {
 	Debugf("Output filename: %s", output)
 
 	var w io.Writer
-	if fetched && useCache {
+	if fetched && !noCache {
 		// if new LICESE file is fetched from GitHub
 		// Create new cache file for it
 		cacheWriter, err := newCache(key, cacheDir)
@@ -248,7 +244,14 @@ func (cli *CLI) Run(args []string) int {
 		return ExitCodeError
 	}
 
-	fmt.Fprintf(cli.outStream, "Successfully generated %q LICENSE\n", key)
+	var msg bytes.Buffer
+	msg.WriteString(fmt.Sprintf("Successfully generated %q LICENSE ", key))
+	if !noCache && !fetched {
+		msg.WriteString("(Use cache)")
+	}
+
+	fmt.Fprintf(cli.errStream, msg.String()+"\n")
+
 	return ExitCodeOK
 }
 
