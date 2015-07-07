@@ -49,7 +49,7 @@ func getCache(key, path string) (io.Reader, error) {
 
 	// Check cache is latest or not
 	cache := cacheFiles[0]
-	createdUnix, err := strconv.Atoi(strings.Split(cache, "-")[1])
+	createdUnix, err := strconv.Atoi(strings.Split(cache, "-")[len(strings.Split(cache, "-"))-1])
 	if err != nil {
 		return nil, fmt.Errorf("invalid cache file name: %s", cache)
 	}
