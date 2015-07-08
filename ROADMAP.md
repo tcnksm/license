@@ -9,11 +9,11 @@ Before release
 
 - More `README.md`
 - test (for cache)
-- Generate all LICENSE and check where to replace
-- Replace function
-- `-author`, `-email`
+ `-author`, `-email`
 - Dockerfile to build binary and release it to Github Release
 - Homebrew formula
+- **DONE**: replace function
+- **DONE**: Generate all LICENSE and check where to replace
 - **DONE**: Cache function
 - **DONE**: Fix `-output` to set directory
 - **DONE**: `go-latest`

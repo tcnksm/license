@@ -41,8 +41,11 @@ type CLI struct {
 // Run invokes the CLI with the given arguments.
 func (cli *CLI) Run(args []string) int {
 
-	var output string
-	var noCache bool
+	var (
+		output  string
+		noCache bool
+		raw     bool
+	)
 
 	// Define option flag parse
 	flags := flag.NewFlagSet(Name, flag.ContinueOnError)
@@ -53,6 +56,7 @@ func (cli *CLI) Run(args []string) int {
 
 	flags.StringVar(&output, "output", DefaultOutput, "")
 	flags.BoolVar(&noCache, "no-cache", false, "")
+	flags.BoolVar(&raw, "raw", false, "")
 
 	flList := flags.Bool("list", false, "")
 	flChoose := flags.Bool("choose", false, "")
@@ -185,7 +189,11 @@ func (cli *CLI) Run(args []string) int {
 		}
 		fmt.Fprintf(cli.errStream, buf.String())
 
-		num, err := cli.AskNumber(len(list), 1)
+		// Use MIT as Default
+		// It may change in future
+		defaultNum := 13
+
+		num, err := cli.AskNumber(len(list), defaultNum)
 		if err != nil {
 			fmt.Fprintf(cli.errStream, "Failed to scan user input: %s\n", err.Error())
 			return ExitCodeError
@@ -203,10 +211,10 @@ func (cli *CLI) Run(args []string) int {
 	cacheDir := filepath.Join(home, CacheDirName)
 
 	// By default noCache is false (useCache) and check cache is exist or not
-	var r io.Reader
+	var body string
 	if !noCache {
 		var err error
-		r, err = getCache(key, cacheDir)
+		body, err = getCache(key, cacheDir)
 		if err != nil {
 			Debugf("Failed to get cache: %s", err.Error())
 		}
@@ -214,13 +222,21 @@ func (cli *CLI) Run(args []string) int {
 
 	// If cache is not exist, fetch it from GitHub
 	var fetched bool = false
-	if r == nil {
+	if len(body) == 0 {
 		var err error
-		r, err = fetchLicense(key)
+		body, err = fetchLicense(key)
 		if err != nil {
 			fmt.Fprintf(cli.errStream, "Failed to get LICENSE file: %s\n", err.Error())
 			return ExitCodeError
 		}
+
+		if !noCache {
+			err := setCache(body, key, cacheDir)
+			if err != nil {
+				Debugf("Failed to save cache: %s", err.Error())
+			}
+		}
+
 		fetched = true
 	}
 
@@ -238,29 +254,71 @@ func (cli *CLI) Run(args []string) int {
 	defer licenseWriter.Close()
 	Debugf("Output filename: %s", output)
 
-	var w io.Writer
-	if fetched && !noCache {
-		// if new LICESE file is fetched from GitHub
-		// Create new cache file for it
-		cacheWriter, err := newCache(key, cacheDir)
-		if err == nil {
-			defer cacheWriter.Close()
-			w = io.MultiWriter(licenseWriter, cacheWriter)
+	// Replace place holders
+	if !raw {
+
+		// Replace year if needed
+		yearFolders := findPlaceFolders(body, yearKeys)
+		year := strconv.Itoa(time.Now().Year())
+		for _, f := range yearFolders {
+			Debugf("Replace %s to %s", f, year)
+			body = strings.Replace(body, f, year, -1)
 		}
-	} else {
-		w = licenseWriter
+
+		// Repalce name if needed
+		nameFolders := findPlaceFolders(body, nameKeys)
+		name := ""
+		if len(nameFolders) > 0 {
+			ans, _ := cli.AskString("Input name of author (owner) ", name)
+
+			if len(ans) != 0 {
+				for _, f := range nameFolders {
+					Debugf("Replace %s to %s", f, ans)
+					body = strings.Replace(body, f, ans, -1)
+				}
+			}
+		}
+
+		// Repalce email if needed
+		emailFolders := findPlaceFolders(body, emailKeys)
+		email := ""
+		if len(emailFolders) > 0 {
+			ans, _ := cli.AskString("Input email", email)
+			if len(ans) != 0 {
+				for _, f := range emailFolders {
+					Debugf("Replace %s to %s", f, ans)
+					body = strings.Replace(body, f, ans, -1)
+				}
+			}
+		}
+
+		// Replace miscs.
+		miscFolders := findPlaceFolders(body, miscKeys)
+		if len(miscFolders) > 0 {
+			for _, f := range miscFolders {
+				defaultMsg := "Do nothing"
+				ans, _ := cli.AskString(fmt.Sprintf("Input %q", constructQuery(f)), defaultMsg)
+				if ans == defaultMsg {
+					continue
+				}
+				Debugf("Replace %s to %s", f, ans)
+				body = strings.Replace(body, f, ans, 1)
+			}
+		}
 	}
 
-	_, err = io.Copy(w, r)
+	// Write LICENSE body to file
+	_, err = io.Copy(licenseWriter, strings.NewReader(body))
 	if err != nil {
 		fmt.Fprintf(cli.errStream, "Failed to write license body to %q: %s\n", output, err.Error())
 		return ExitCodeError
 	}
 
+	// Output message to user
 	var msg bytes.Buffer
-	msg.WriteString(fmt.Sprintf("Successfully generated %q LICENSE ", key))
+	msg.WriteString(fmt.Sprintf("Successfully generated %q LICENSE", key))
 	if !noCache && !fetched {
-		msg.WriteString("(Use cache)")
+		msg.WriteString(" (Use cache)")
 	}
 
 	fmt.Fprintf(cli.errStream, msg.String()+"\n")
@@ -317,6 +375,40 @@ func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
 		return -1, fmt.Errorf("interrupted")
 	case num := <-result:
 		return num, nil
+	}
+}
+
+// AskString asks user to input some string
+func (cli CLI) AskString(query string, defaultStr string) (string, error) {
+
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt)
+	defer signal.Stop(sigCh)
+
+	result := make(chan string, 1)
+	go func() {
+		fmt.Fprintf(cli.errStream, "%s [default: %s] ", query, defaultStr)
+
+		// TODO when string includes blank ...
+		var line string
+		if _, err := fmt.Fscanln(os.Stdin, &line); err != nil {
+			Debugf("Failed to scan stdin: %s", err.Error())
+		}
+		Debugf("Input: %q", line)
+
+		// Use Default value
+		if line == "" {
+			result <- defaultStr
+		}
+
+		result <- line
+	}()
+
+	select {
+	case <-sigCh:
+		return "", fmt.Errorf("interrupted")
+	case str := <-result:
+		return str, nil
 	}
 }
 
@@ -415,6 +507,9 @@ Options:
   -output=NAME        Change output file name.
                       By default, output file name is 'LICENSE'
 
-  -no-chache          Not use local cache.
+  -no-chache          Disable using local cache.
+
+  -raw                Generate raw LICENSE file.
+                      By default, it replace year, name, or email
 
 `
