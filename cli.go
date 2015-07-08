@@ -258,22 +258,30 @@ func (cli *CLI) Run(args []string) int {
 	// Replace place holders
 	if !raw {
 
+		DoNothing := "(no replacement)"
+
 		// Replace year if needed
 		yearFolders := findPlaceFolders(body, yearKeys)
 		year := strconv.Itoa(time.Now().Year())
 		for _, f := range yearFolders {
-			Debugf("Replace %s to %s", f, year)
+			fmt.Fprintf(cli.errStream, "\n----> Replace placefolder %q to %q in LICENSE body\n", f, year)
 			body = strings.Replace(body, f, year, -1)
 		}
 
 		// Repalce name if needed
 		nameFolders := findPlaceFolders(body, nameKeys)
-		defaultName, _ := gitconfig.GithubUser()
 		if len(nameFolders) > 0 {
-			ans, _ := cli.AskString("Input name of author (owner) ", defaultName)
-			if len(ans) != 0 {
+			// Retrieve default value from .gitconfig
+			defaultName, _ := gitconfig.GithubUser()
+			if len(defaultName) == 0 {
+				defaultName = DoNothing
+			}
+
+			// Ask or Confirm default value from user
+			ans, _ := cli.AskString("\nInput fullname of author", defaultName)
+			if ans != DoNothing {
 				for _, f := range nameFolders {
-					Debugf("Replace %s to %s", f, ans)
+					fmt.Fprintf(cli.errStream, "----> Replace placefolder %q to %q in LICENSE body\n", f, ans)
 					body = strings.Replace(body, f, ans, -1)
 				}
 			}
@@ -281,12 +289,17 @@ func (cli *CLI) Run(args []string) int {
 
 		// Repalce email if needed
 		emailFolders := findPlaceFolders(body, emailKeys)
-		defaultEmail, _ := gitconfig.Email()
 		if len(emailFolders) > 0 {
-			ans, _ := cli.AskString("Input email", defaultEmail)
-			if len(ans) != 0 {
+			// Retrieve default value from .gitconfig
+			defaultEmail, _ := gitconfig.Email()
+			if len(defaultEmail) == 0 {
+				defaultEmail = DoNothing
+			}
+			// Ask or Confirm default value from user
+			ans, _ := cli.AskString("\nInput email", defaultEmail)
+			if ans != DoNothing {
 				for _, f := range emailFolders {
-					Debugf("Replace %s to %s", f, ans)
+					fmt.Fprintf(cli.errStream, "----> Replace placefolder %q to %q in LICENSE body\n", f, ans)
 					body = strings.Replace(body, f, ans, -1)
 				}
 			}
@@ -296,12 +309,11 @@ func (cli *CLI) Run(args []string) int {
 		miscFolders := findPlaceFolders(body, miscKeys)
 		if len(miscFolders) > 0 {
 			for _, f := range miscFolders {
-				defaultMsg := "Do nothing"
-				ans, _ := cli.AskString(fmt.Sprintf("Input %q", constructQuery(f)), defaultMsg)
-				if ans == defaultMsg {
+				ans, _ := cli.AskString(fmt.Sprintf("\nInput %q", constructQuery(f)), DoNothing)
+				if ans == DoNothing {
 					continue
 				}
-				Debugf("Replace %s to %s", f, ans)
+				fmt.Fprintf(cli.errStream, "----> Replace placefolder %q to %q in LICENSE body\n", f, ans)
 				body = strings.Replace(body, f, ans, 1)
 			}
 		}
@@ -316,7 +328,7 @@ func (cli *CLI) Run(args []string) int {
 
 	// Output message to user
 	var msg bytes.Buffer
-	msg.WriteString(fmt.Sprintf("Successfully generated %q LICENSE", key))
+	msg.WriteString(fmt.Sprintf("\n====> Successfully generated %q LICENSE", key))
 	if !noCache && !fetched {
 		msg.WriteString(" (Use cache)")
 	}

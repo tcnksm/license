@@ -45,5 +45,5 @@ func findPlaceFolders(body string, keys []string) (folders []string) {
 var reg = regexp.MustCompile("[{}<>\\[\\]]")
 
 func constructQuery(raw string) string {
-	return reg.ReplaceAllString(raw, "")
+	return strings.TrimRight(reg.ReplaceAllString(raw, ""), ".")
 }
