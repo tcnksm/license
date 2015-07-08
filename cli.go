@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"flag"
 	"fmt"
@@ -402,13 +403,15 @@ func (cli CLI) AskString(query string, defaultStr string) (string, error) {
 		fmt.Fprintf(cli.errStream, "%s [default: %s] ", query, defaultStr)
 
 		// TODO when string includes blank ...
-		var line string
-		if _, err := fmt.Fscanln(os.Stdin, &line); err != nil {
+		reader := bufio.NewReader(os.Stdin)
+		line, err := reader.ReadString('\n')
+		if err != nil {
 			Debugf("Failed to scan stdin: %s", err.Error())
 		}
 		Debugf("Input: %q", line)
 
 		// Use Default value
+		line = strings.TrimRight(line, "\n")
 		if line == "" {
 			result <- defaultStr
 		}
