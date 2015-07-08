@@ -1,6 +1,7 @@
 # Replacement Rule
 
-This is replacement rule of LICENSE file
+Each LINCESE has its own placefolder to replace. This table shows which LICENSE has what kind of placefloder. 
+`license` replace below while generating, 
 
 | Key           |Year|Author|Email|etc|
 |---|---|---|---|---|
