@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -18,12 +19,14 @@ const (
 	CacheDuration = 24 * time.Hour
 )
 
-func newCache(key, path string) (io.WriteCloser, error) {
+// setCache saves body as file (named key + Unix time) in provided
+// path. Any errors that occur are returned.
+func setCache(body, key, path string) error {
 	// Create cache directory if not exist
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err := os.MkdirAll(path, 0777)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
@@ -35,35 +38,47 @@ func newCache(key, path string) (io.WriteCloser, error) {
 	cacheFileName := filepath.Join(path, key+"-"+timeStr)
 	Debugf("Cache filename: %s", cacheFileName)
 
-	return os.Create(cacheFileName)
+	cacheWriter, err := os.Create(cacheFileName)
+	if err != nil {
+		return err
+	}
+
+	r := strings.NewReader(body)
+	_, err = io.Copy(cacheWriter, r)
+	return err
 }
 
-// getCache read cache contents from path
-func getCache(key, path string) (io.Reader, error) {
+// getCache read cache contents from provided path.
+// Any errors that occur are returned.
+func getCache(key, path string) (string, error) {
 	cacheFiles, err := filepath.Glob(filepath.Join(path, key+"-"+"*"))
 
 	// Check cache file is exist or not
 	if len(cacheFiles) == 0 {
-		return nil, fmt.Errorf("cache file is not exist in %s", path)
+		return "", fmt.Errorf("cache file is not exist in %s", path)
 	}
 
 	// Check cache is latest or not
 	cache := cacheFiles[0]
 	createdUnix, err := strconv.Atoi(strings.Split(cache, "-")[len(strings.Split(cache, "-"))-1])
 	if err != nil {
-		return nil, fmt.Errorf("invalid cache file name: %s", cache)
+		return "", fmt.Errorf("invalid cache file name: %s", cache)
 	}
 	createdTime := time.Unix(int64(createdUnix), 0)
 	Debugf("Cache was created at %s", createdTime.String())
 
 	if time.Now().Sub(createdTime) > CacheDuration {
-		return nil, fmt.Errorf("cache file is old")
+		return "", fmt.Errorf("cache file is old")
 	}
 
-	return os.OpenFile(cache, os.O_RDONLY, 0777)
+	b, err := ioutil.ReadFile(cache)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
-// cleanCache deletes old cache files
+// cleanCache deletes old cache files. Any errors that occur are returned.
 func cleanCache(key, path string) {
 	oldCacheFiles, err := filepath.Glob(filepath.Join(path, key+"-"+"*"))
 	if err != nil {
