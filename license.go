@@ -33,7 +33,7 @@ var miscKeys = []string{
 	"{description}",
 }
 
-func findPlaceFolders(body string, keys []string) (folders []string) {
+func findPlaceholders(body string, keys []string) (folders []string) {
 	for _, k := range keys {
 		if strings.Contains(body, k) {
 			folders = append(folders, k)

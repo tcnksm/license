@@ -262,15 +262,15 @@ func (cli *CLI) Run(args []string) int {
 		DoNothing := "(no replacement)"
 
 		// Replace year if needed
-		yearFolders := findPlaceFolders(body, yearKeys)
+		yearFolders := findPlaceholders(body, yearKeys)
 		year := strconv.Itoa(time.Now().Year())
 		for _, f := range yearFolders {
-			fmt.Fprintf(cli.errStream, "\n----> Replace placefolder %q to %q in LICENSE body\n", f, year)
+			fmt.Fprintf(cli.errStream, "\n----> Replace placeholder %q to %q in LICENSE body\n", f, year)
 			body = strings.Replace(body, f, year, -1)
 		}
 
 		// Repalce name if needed
-		nameFolders := findPlaceFolders(body, nameKeys)
+		nameFolders := findPlaceholders(body, nameKeys)
 		if len(nameFolders) > 0 {
 			// Retrieve default value from .gitconfig
 			defaultName, _ := gitconfig.GithubUser()
@@ -282,14 +282,14 @@ func (cli *CLI) Run(args []string) int {
 			ans, _ := cli.AskString("\nInput fullname of author", defaultName)
 			if ans != DoNothing {
 				for _, f := range nameFolders {
-					fmt.Fprintf(cli.errStream, "----> Replace placefolder %q to %q in LICENSE body\n", f, ans)
+					fmt.Fprintf(cli.errStream, "----> Replace placeholder %q to %q in LICENSE body\n", f, ans)
 					body = strings.Replace(body, f, ans, -1)
 				}
 			}
 		}
 
 		// Repalce email if needed
-		emailFolders := findPlaceFolders(body, emailKeys)
+		emailFolders := findPlaceholders(body, emailKeys)
 		if len(emailFolders) > 0 {
 			// Retrieve default value from .gitconfig
 			defaultEmail, _ := gitconfig.Email()
@@ -300,21 +300,21 @@ func (cli *CLI) Run(args []string) int {
 			ans, _ := cli.AskString("\nInput email", defaultEmail)
 			if ans != DoNothing {
 				for _, f := range emailFolders {
-					fmt.Fprintf(cli.errStream, "----> Replace placefolder %q to %q in LICENSE body\n", f, ans)
+					fmt.Fprintf(cli.errStream, "----> Replace placeholder %q to %q in LICENSE body\n", f, ans)
 					body = strings.Replace(body, f, ans, -1)
 				}
 			}
 		}
 
 		// Replace miscs.
-		miscFolders := findPlaceFolders(body, miscKeys)
+		miscFolders := findPlaceholders(body, miscKeys)
 		if len(miscFolders) > 0 {
 			for _, f := range miscFolders {
 				ans, _ := cli.AskString(fmt.Sprintf("\nInput %q", constructQuery(f)), DoNothing)
 				if ans == DoNothing {
 					continue
 				}
-				fmt.Fprintf(cli.errStream, "----> Replace placefolder %q to %q in LICENSE body\n", f, ans)
+				fmt.Fprintf(cli.errStream, "----> Replace placeholder %q to %q in LICENSE body\n", f, ans)
 				body = strings.Replace(body, f, ans, 1)
 			}
 		}
