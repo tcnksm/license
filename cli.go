@@ -17,6 +17,7 @@ import (
 	"github.com/mitchellh/colorstring"
 	"github.com/mitchellh/go-homedir"
 	"github.com/olekukonko/tablewriter"
+	"github.com/tcnksm/go-gitconfig"
 )
 
 // Exit codes are int values that represent an exit code for a particular error.
@@ -189,8 +190,8 @@ func (cli *CLI) Run(args []string) int {
 		}
 		fmt.Fprintf(cli.errStream, buf.String())
 
-		// Use MIT as Default
-		// It may change in future
+		// Use MIT as default, it may change in future
+		// So should fix it
 		defaultNum := 13
 
 		num, err := cli.AskNumber(len(list), defaultNum)
@@ -267,10 +268,9 @@ func (cli *CLI) Run(args []string) int {
 
 		// Repalce name if needed
 		nameFolders := findPlaceFolders(body, nameKeys)
-		name := ""
+		defaultName, _ := gitconfig.GithubUser()
 		if len(nameFolders) > 0 {
-			ans, _ := cli.AskString("Input name of author (owner) ", name)
-
+			ans, _ := cli.AskString("Input name of author (owner) ", defaultName)
 			if len(ans) != 0 {
 				for _, f := range nameFolders {
 					Debugf("Replace %s to %s", f, ans)
@@ -281,9 +281,9 @@ func (cli *CLI) Run(args []string) int {
 
 		// Repalce email if needed
 		emailFolders := findPlaceFolders(body, emailKeys)
-		email := ""
+		defaultEmail, _ := gitconfig.Email()
 		if len(emailFolders) > 0 {
-			ans, _ := cli.AskString("Input email", email)
+			ans, _ := cli.AskString("Input email", defaultEmail)
 			if len(ans) != 0 {
 				for _, f := range emailFolders {
 					Debugf("Replace %s to %s", f, ans)
