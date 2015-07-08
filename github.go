@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"net/http"
-	"strings"
 
 	"github.com/google/go-github/github"
 )
@@ -28,7 +26,7 @@ func fetchLicenseList() ([]github.License, error) {
 
 // fetchLicense fetches LICENSE file from Github API.
 // if something wrong returns error.
-func fetchLicense(key string) (io.Reader, error) {
+func fetchLicense(key string) (string, error) {
 
 	// Create default client
 	client := github.NewClient(nil)
@@ -37,13 +35,13 @@ func fetchLicense(key string) (io.Reader, error) {
 	Debugf("Fetch license from GitHub API by key: %s", key)
 	license, res, err := client.Licenses.Get(key)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("invalid status code from GitHub\n %s\n", res.String())
+		return "", fmt.Errorf("invalid status code from GitHub\n %s\n", res.String())
 	}
 	Debugf("Fetched license name: %s", *license.Name)
 
-	return strings.NewReader(*license.Body), nil
+	return *license.Body, nil
 }
