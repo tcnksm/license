@@ -16,11 +16,11 @@ You can select a LICENSE from avairable list,
 
 ![](http://g.recordit.co/IlnUBhCUHX.gif)
 
-You can specify key name,
+You can just provide key name,
 
 ![](http://g.recordit.co/FRKXgTvrml.gif)
 
-And you can also choose LICENSE file like [choosealicense.com/](http://choosealicense.com/),
+If you feel difficulty to choose LICENSE of project, you can use `-choose` option and it will ask you to choose LICESE like [choosealicense.com/](http://choosealicense.com/),
 
 ![](http://g.recordit.co/2MZs3RTnSd.gif)
 
@@ -40,7 +40,7 @@ $ license -list
 
 If you don't provide specific `KEY`, `license` will ask you to select one from list.
 
-If you feel difficulty to choose LICENSE of project, you can use `-choose` option, it will ask you to choose LICESE like [choosealicense.com/](http://choosealicense.com/),
+To choose LICENSE like [choosealicense.com/](http://choosealicense.com/),
 
 ```bash
 $ license -choose
