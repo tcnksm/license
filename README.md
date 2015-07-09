@@ -50,12 +50,12 @@ To see more usage, use `-help` option
 
 ## Install 
 
-Binaries for your platform are provided, install it from [Relase page]().
+Binaries for your platform are provided, install it from [Relase page](https://github.com/tcnksm/license/releases).
 
-If you use OSX and [homebrew]() for your package manager, you can use fomula for this project,
+If you use OSX and [homebrew](http://brew.sh/) for your package manager, you can use fomula for this project,
 
 ```bash
-$ tap tcnksm/license
+$ brew tap tcnksm/license
 $ brew install license
 ```
 
