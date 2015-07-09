@@ -7,11 +7,8 @@ If you have feature request, please open issues or send pull request.
 
 Before release 
 
-- More `README.md`
-- test (for cache)
- `-author`, `-email`
-- Dockerfile to build binary and release it to Github Release
-- Homebrew formula
+- **DONE**: More `README.md`
+- **DONE**: Homebrew formula
 - **DONE**: replace function
 - **DONE**: Generate all LICENSE and check where to replace
 - **DONE**: Cache function
@@ -21,3 +18,5 @@ Before release
 ## 0.1.1
 
 - Add `-force` option
+- Dockerfile to build binary and release it to Github Release
+- test (for cache)
