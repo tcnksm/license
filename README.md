@@ -8,7 +8,7 @@
 [license]: https://github.com/tcnksm/license/blob/master/LICENSE
 [godocs]: http://godoc.org/github.com/tcnksm/license
 
-`license` is a simple command line tool to generate LICENSE file you want to use. It fetches one from [Github API](https://developer.github.com/v3/licenses/). You can also choose LICENSE file like [choosealicense.com/](http://choosealicense.com/). 
+`license` is a simple command line tool to generate LICENSE file you want to use. It fetches one from [Github API](https://developer.github.com/v3/licenses/). You can also choose LICENSE like [choosealicense.com/](http://choosealicense.com/). 
 
 ## Demo
 
@@ -20,7 +20,7 @@ You can just provide key name,
 
 ![](http://g.recordit.co/FRKXgTvrml.gif)
 
-If you feel difficulty to choose LICENSE, you can choose one like [choosealicense.com/](http://choosealicense.com/),
+If you feel difficulty to choose LICENSE, you can do it like [choosealicense.com/](http://choosealicense.com/),
 
 ![](http://g.recordit.co/2MZs3RTnSd.gif)
 
