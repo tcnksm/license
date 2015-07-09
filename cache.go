@@ -13,10 +13,10 @@ import (
 
 const (
 	// CacheDir is directory for caching LICENSE files
-	CacheDirName = ".licns"
+	CacheDirName = ".lcns"
 
 	// CacheDuration is duration for storing cache
-	CacheDuration = 24 * time.Hour
+	CacheDuration = 30 * 24 * time.Hour
 )
 
 // setCache saves body as file (named key + Unix time) in provided
