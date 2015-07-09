@@ -20,7 +20,7 @@ You can just provide key name,
 
 ![](http://g.recordit.co/FRKXgTvrml.gif)
 
-If you feel difficulty to choose LICENSE of project, you can use `-choose` option and it will ask you to choose LICESE like [choosealicense.com/](http://choosealicense.com/),
+If you feel difficulty to choose LICENSE, you can choose one like [choosealicense.com/](http://choosealicense.com/),
 
 ![](http://g.recordit.co/2MZs3RTnSd.gif)
 
