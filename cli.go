@@ -31,6 +31,9 @@ const (
 const (
 	// DefaultOutput is default output file name
 	DefaultOutput = "LICENSE"
+
+	// Default value for user input
+	DoNothing = "(no replacement)"
 )
 
 // CLI is the command line object
@@ -259,13 +262,11 @@ func (cli *CLI) Run(args []string) int {
 	// Replace place holders
 	if !raw {
 
-		DoNothing := "(no replacement)"
-
 		// Replace year if needed
 		yearFolders := findPlaceholders(body, yearKeys)
 		year := strconv.Itoa(time.Now().Year())
 		for _, f := range yearFolders {
-			fmt.Fprintf(cli.errStream, "\n----> Replace placeholder %q to %q in LICENSE body\n", f, year)
+			fmt.Fprintf(cli.errStream, "----> Replace placeholder %q to %q in LICENSE body\n", f, year)
 			body = strings.Replace(body, f, year, -1)
 		}
 
@@ -279,7 +280,7 @@ func (cli *CLI) Run(args []string) int {
 			}
 
 			// Ask or Confirm default value from user
-			ans, _ := cli.AskString("\nInput fullname of author", defaultName)
+			ans, _ := cli.AskString("Input fullname of author", defaultName)
 			if ans != DoNothing {
 				for _, f := range nameFolders {
 					fmt.Fprintf(cli.errStream, "----> Replace placeholder %q to %q in LICENSE body\n", f, ans)
@@ -297,7 +298,7 @@ func (cli *CLI) Run(args []string) int {
 				defaultEmail = DoNothing
 			}
 			// Ask or Confirm default value from user
-			ans, _ := cli.AskString("\nInput email", defaultEmail)
+			ans, _ := cli.AskString("Input email", defaultEmail)
 			if ans != DoNothing {
 				for _, f := range emailFolders {
 					fmt.Fprintf(cli.errStream, "----> Replace placeholder %q to %q in LICENSE body\n", f, ans)
@@ -310,7 +311,7 @@ func (cli *CLI) Run(args []string) int {
 		miscFolders := findPlaceholders(body, miscKeys)
 		if len(miscFolders) > 0 {
 			for _, f := range miscFolders {
-				ans, _ := cli.AskString(fmt.Sprintf("\nInput %q", constructQuery(f)), DoNothing)
+				ans, _ := cli.AskString(fmt.Sprintf("Input %q", constructQuery(f)), DoNothing)
 				if ans == DoNothing {
 					continue
 				}
@@ -329,7 +330,7 @@ func (cli *CLI) Run(args []string) int {
 
 	// Output message to user
 	var msg bytes.Buffer
-	msg.WriteString(fmt.Sprintf("\n====> Successfully generated %q LICENSE", key))
+	msg.WriteString(fmt.Sprintf("====> Successfully generated %q LICENSE", key))
 	if !noCache && !fetched {
 		msg.WriteString(" (Use cache)")
 	}
