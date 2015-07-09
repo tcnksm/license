@@ -8,26 +8,39 @@
 [license]: https://github.com/tcnksm/license/blob/master/LICENSE
 [godocs]: http://godoc.org/github.com/tcnksm/license
 
-`license` is a simple command line tool to generate LICENSE file you prefer. It fetches one from [Github API](https://developer.github.com/v3/licenses/) and ask you place to replace. It's good point for you to start your OSS product.
+`license` is a simple command line tool to generate LICENSE file you want to use. It fetches one from [Github API](https://developer.github.com/v3/licenses/). You can also choose LICENSE file like [choosealicense.com/](http://choosealicense.com/). 
+
+## Demo
+
+You can select a LICENSE from avairable list,
+
+![](http://g.recordit.co/IlnUBhCUHX.gif)
+
+You can specify key name,
+
+![](http://g.recordit.co/FRKXgTvrml.gif)
+
+And you can also choose LICENSE file like [choosealicense.com/](http://choosealicense.com/),
+
+![](http://g.recordit.co/2MZs3RTnSd.gif)
 
 ## Usage
 
-To generage `LICENSE` file, you just provide `KEY` name of LICENSE you want,
+To generage LICENSE file, you just provide `KEY` name of LICENSE you want,
 
 ```bash
 $ license [option] [KEY]
 ```
 
-To check avairable `LICESE` file, you can see all of them by `-list` options
+To check avairable `LICESE` file and its `KEY`, you can see all of them by `-list` option, 
 
 ```bash
 $ license -list
 ```
 
-If you don't provide specific `KEY`, `license` will ask you which `LICENSE` is good for you.
+If you don't provide specific `KEY`, `license` will ask you to select one from list.
 
-If you feel difficulty to choose `LICENSE` for your project, `license` command provide you a way to choose `LICENSE`
-you need by `-choose` option, it will ask you to choose `LICESE` like [choosealicense.com/](http://choosealicense.com/) ,
+If you feel difficulty to choose LICENSE of project, you can use `-choose` option, it will ask you to choose LICESE like [choosealicense.com/](http://choosealicense.com/),
 
 ```bash
 $ license -choose
@@ -65,4 +78,4 @@ $ go get -d github.com/tcnksm/license
 
 ## Author
 
-[tcnksm](https://github.com/tcnksm)
+[Taichi Nakashima](https://github.com/tcnksm)
