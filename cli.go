@@ -209,7 +209,7 @@ func (cli *CLI) Run(args []string) int {
 
 	home, err := homedir.Dir()
 	if err != nil {
-		Debugf("Faild to get home directory: %s", err.Error())
+		Debugf("Failed to get home directory: %s", err.Error())
 		noCache = true
 		home = "."
 	}
@@ -523,7 +523,7 @@ Options:
   -output=NAME        Change output file name.
                       By default, output file name is 'LICENSE'
 
-  -no-chache          Disable using local cache.
+  -no-cache           Disable using local cache.
 
   -raw                Generate raw LICENSE file.
                       By default, it replace year, name, or email

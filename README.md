@@ -26,13 +26,13 @@ If you feel difficulty to choose LICENSE, you can do it like [choosealicense.com
 
 ## Usage
 
-To generage LICENSE file, you just provide `KEY` name of LICENSE you want,
+To generate LICENSE file, you just provide `KEY` name of LICENSE you want,
 
 ```bash
 $ license [option] [KEY]
 ```
 
-To check avairable `LICESE` file and its `KEY`, you can see all of them by `-list` option, 
+To check available `LICENSE` file and its `KEY`, you can see all of them by `-list` option, 
 
 ```bash
 $ license -list
@@ -50,9 +50,9 @@ To see more usage, use `-help` option
 
 ## Install 
 
-Binaries for your platform are provided, install it from [Relase page](https://github.com/tcnksm/license/releases).
+Binaries for your platform are provided, install it from [Release page](https://github.com/tcnksm/license/releases).
 
-If you use OSX and [homebrew](http://brew.sh/) for your package manager, you can use fomula for this project,
+If you use OSX and [homebrew](http://brew.sh/) for your package manager, you can use formula for this project,
 
 ```bash
 $ brew tap tcnksm/license
