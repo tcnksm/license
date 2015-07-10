@@ -204,6 +204,10 @@ func (cli *CLI) Run(args []string) int {
 			return ExitCodeError
 		}
 
+		// Output raw license file, If it is GNU's license
+		if strings.Contains(*(list[num-1]).Name, "GNU") {
+			raw = true
+		}
 		key = *(list[num-1]).Key
 	}
 
@@ -510,7 +514,7 @@ var helpText = `Usage: license [option] [KEY]
 
   Generate LICENSE file. If you provide KEY, it will try to get LICENSE by
   it. If you don't provide it, it will ask you to choose from avairable list.
-  You can check avairable LICESE list by '-list' option. 
+  You can check avairable LICESE list by '-list' option.
 
 Options:
 
@@ -518,7 +522,7 @@ Options:
                       It will fetch information from GitHub.
 
   -choose             Choose LICENSE like http://choosealicense.com/
-                      It shows you which LICENSE is useful for you. 
+                      It shows you which LICENSE is useful for you.
 
   -output=NAME        Change output file name.
                       By default, output file name is 'LICENSE'
