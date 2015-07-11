@@ -1,3 +1,23 @@
+## 0.1.1 (2015-07-11)
+
+Fix bugs
+
+### Added
+
+- Nothing
+
+### Deprecated
+
+- Nothing
+
+### Removed
+
+- Replace rule on `How to apply` section ([#2](https://github.com/tcnksm/license/pull/2))
+
+### Fixed
+
+- Nothing
+
 ## 0.1.0 (2015-07-10)
 
 Initial release

@@ -7,7 +7,7 @@ import (
 )
 
 const Name string = "license"
-const Version string = "0.1.0"
+const Version string = "0.1.1"
 
 // verCheckCh is channel which gets go-latest.Response
 var verCheckCh = make(chan *latest.CheckResponse)
