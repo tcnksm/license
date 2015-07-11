@@ -204,10 +204,6 @@ func (cli *CLI) Run(args []string) int {
 			return ExitCodeError
 		}
 
-		// Output raw license file, If it is GNU's license
-		if strings.Contains(*(list[num-1]).Name, "GNU") {
-			raw = true
-		}
 		key = *(list[num-1]).Key
 	}
 

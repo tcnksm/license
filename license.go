@@ -6,19 +6,11 @@ import (
 )
 
 var yearKeys = []string{
-	"{year}",
-	"<year>",
-	"{yyyy}",
 	"[year]",
 }
 
 var nameKeys = []string{
-	"{name of author}",
-	"<name of author>",
-	"[name of author]",
-	"{fullname}",
 	"[fullname]",
-	"{name of copyright owner}",
 }
 
 var emailKeys = []string{
@@ -26,11 +18,7 @@ var emailKeys = []string{
 }
 
 var miscKeys = []string{
-	"<one line to give the program's name and a brief idea of what it does.>",
-	"{one line to give the program's name and a brief idea of what it does.}",
-	"{signature of Ty Coon}",
 	"[project]",
-	"{description}",
 }
 
 func findPlaceholders(body string, keys []string) (folders []string) {
