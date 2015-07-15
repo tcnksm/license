@@ -54,6 +54,7 @@ func (cli *CLI) Run(args []string) int {
 		optionEmail   string
 		optionProject string
 
+		force   bool
 		noCache bool
 		raw     bool
 	)
@@ -67,6 +68,7 @@ func (cli *CLI) Run(args []string) int {
 
 	flags.StringVar(&output, "output", DefaultOutput, "")
 	flags.BoolVar(&noCache, "no-cache", false, "")
+	flags.BoolVar(&force, "force", false, "")
 	flags.BoolVar(&raw, "raw", false, "")
 
 	// Replacement values
@@ -160,7 +162,7 @@ func (cli *CLI) Run(args []string) int {
 	}
 
 	// Check file exist or not
-	if _, err := os.Stat(output); !os.IsNotExist(err) {
+	if _, err := os.Stat(output); !os.IsNotExist(err) && !force {
 		fmt.Fprintf(cli.errStream, "Cannot create file %q: file exists\n", output)
 		return ExitCodeError
 	}
@@ -293,17 +295,17 @@ func (cli *CLI) Run(args []string) int {
 		if len(defaultAuthor) == 0 {
 			defaultAuthor = DoNothing
 		}
-		cli.ReplacePlaceholder(body, nameKeys, "Input author name", defaultAuthor, optionAuthor)
+		body = cli.ReplacePlaceholder(body, nameKeys, "Input author name", defaultAuthor, optionAuthor)
 
 		// Replace email if needed
 		defaultEmail, _ := gitconfig.Email()
 		if len(defaultEmail) == 0 {
 			defaultEmail = DoNothing
 		}
-		cli.ReplacePlaceholder(body, nameKeys, "Input email", defaultEmail, optionEmail)
+		body = cli.ReplacePlaceholder(body, nameKeys, "Input email", defaultEmail, optionEmail)
 
 		// Replace project name if needed
-		cli.ReplacePlaceholder(body, projectKeys, "Input project name", DoNothing, optionProject)
+		body = cli.ReplacePlaceholder(body, projectKeys, "Input project name", DoNothing, optionProject)
 	}
 
 	// Write LICENSE body to file
@@ -342,7 +344,13 @@ Options:
   -output=NAME        Change output file name.
                       By default, output file name is 'LICENSE'
 
+  -force              Replace LICENSE file if exist.
+                      By default, it stop generating if file is alreay
+                      exist
+
   -no-cache           Disable using local cache.
+                      By default, it uses local cache file which
+                      is saved in ~/.lcns folder. 
 
   -raw                Generate raw LICENSE file.
                       By default, it replace year, name, or email
