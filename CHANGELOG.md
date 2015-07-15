@@ -1,10 +1,10 @@
-# 0.1.2 (Not released)
+## 0.1.2 (Not released)
 
 Fix bugs
 
 ### Added
 
-- Add -year, -author, -email, -project options ([#4](https://github.com/tcnksm/license/pull/4))
+- Add `-year`, `-author`, `-email`, `-project` options ([#4](https://github.com/tcnksm/license/pull/4))
 
 ### Deprecated
 
