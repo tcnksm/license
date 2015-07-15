@@ -5,6 +5,7 @@ Fix bugs
 ### Added
 
 - Add `-year`, `-author`, `-email`, `-project` options ([#4](https://github.com/tcnksm/license/pull/4))
+- Add `-force` option ([#5](https://github.com/tcnksm/license/pull/5))
 
 ### Deprecated
 
