@@ -1,3 +1,23 @@
+# 0.1.2 (Not released)
+
+Fix bugs
+
+### Added
+
+- Add -year, -author, -email, -project options ([#4](https://github.com/tcnksm/license/pull/4))
+
+### Deprecated
+
+- Nothing
+
+### Removed
+
+- Nothing
+
+### Fixed
+
+- Nothing
+
 ## 0.1.1 (2015-07-11)
 
 Fix bugs
