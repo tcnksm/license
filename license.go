@@ -17,7 +17,7 @@ var emailKeys = []string{
 	"[email]",
 }
 
-var miscKeys = []string{
+var projectKeys = []string{
 	"[project]",
 }
 
