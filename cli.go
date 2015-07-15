@@ -295,17 +295,17 @@ func (cli *CLI) Run(args []string) int {
 		if len(defaultAuthor) == 0 {
 			defaultAuthor = DoNothing
 		}
-		cli.ReplacePlaceholder(body, nameKeys, "Input author name", defaultAuthor, optionAuthor)
+		body = cli.ReplacePlaceholder(body, nameKeys, "Input author name", defaultAuthor, optionAuthor)
 
 		// Replace email if needed
 		defaultEmail, _ := gitconfig.Email()
 		if len(defaultEmail) == 0 {
 			defaultEmail = DoNothing
 		}
-		cli.ReplacePlaceholder(body, nameKeys, "Input email", defaultEmail, optionEmail)
+		body = cli.ReplacePlaceholder(body, nameKeys, "Input email", defaultEmail, optionEmail)
 
 		// Replace project name if needed
-		cli.ReplacePlaceholder(body, projectKeys, "Input project name", DoNothing, optionProject)
+		body = cli.ReplacePlaceholder(body, projectKeys, "Input project name", DoNothing, optionProject)
 	}
 
 	// Write LICENSE body to file

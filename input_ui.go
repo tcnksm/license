@@ -100,7 +100,7 @@ func (cli CLI) AskString(query string, defaultStr string) (string, error) {
 	}
 }
 
-func (cli *CLI) ReplacePlaceholder(body string, keys []string, query, defaultReplace, optionValue string) {
+func (cli *CLI) ReplacePlaceholder(body string, keys []string, query, defaultReplace, optionValue string) string {
 	// Repalce name if needed
 	folders := findPlaceholders(body, keys)
 
@@ -120,6 +120,8 @@ func (cli *CLI) ReplacePlaceholder(body string, keys []string, query, defaultRep
 			}
 		}
 	}
+
+	return body
 }
 
 // Choose shows shows LICENSE description from http://choosealicense.com/
