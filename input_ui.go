@@ -24,9 +24,9 @@ func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
 		for {
 
 			fmt.Fprintf(cli.errStream, "Your choice? [default: %d] ", defaultNum)
-
-			var line string
-			if _, err := fmt.Fscanln(os.Stdin, &line); err != nil {
+			reader := bufio.NewReader(os.Stdin)
+			line, err := reader.ReadString('\n')
+			if err != nil {
 				Debugf("Failed to scan stdin: %s", err.Error())
 			}
 
@@ -75,7 +75,6 @@ func (cli CLI) AskString(query string, defaultStr string) (string, error) {
 	go func() {
 		fmt.Fprintf(cli.errStream, "%s [default: %s] ", query, defaultStr)
 
-		// TODO when string includes blank ...
 		reader := bufio.NewReader(os.Stdin)
 		line, err := reader.ReadString('\n')
 		if err != nil {
