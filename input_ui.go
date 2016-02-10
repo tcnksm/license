@@ -76,14 +76,14 @@ func (cli CLI) AskString(query string, defaultStr string) (string, error) {
 		fmt.Fprintf(cli.errStream, "%s [default: %s] ", query, defaultStr)
 
 		reader := bufio.NewReader(os.Stdin)
-		line, err := reader.ReadString('\n')
+		b, _, err := reader.ReadLine()
 		if err != nil {
 			Debugf("Failed to scan stdin: %s", err.Error())
 		}
+		line := string(b)
 		Debugf("Input: %q", line)
 
 		// Use Default value
-		line = strings.TrimRight(line, "\n")
 		if line == "" {
 			result <- defaultStr
 		}
