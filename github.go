@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-github/github"
 )
 
-func fetchLicenseList() ([]github.License, error) {
+func fetchLicenseList() ([]*github.License, error) {
 	// Create default client
 	client := github.NewClient(nil)
 
