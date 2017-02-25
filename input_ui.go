@@ -29,7 +29,7 @@ func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
 			if err != nil {
 				Debugf("Failed to scan stdin: %s", err.Error())
 			}
-			line = strings.TrimSuffix(line, "\n")
+			line = strings.TrimSuffix(line, "\r\n")
 
 			Debugf("Input: %q", line)
 
