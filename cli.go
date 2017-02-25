@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -122,7 +123,7 @@ func (cli *CLI) Run(args []string) int {
 		client := github.NewClient(nil)
 
 		// Fetch list from Github API
-		list, res, err := client.Licenses.List()
+		list, res, err := client.Licenses.List(context.Background())
 		if err != nil {
 			fmt.Fprintf(cli.errStream, "Failed to fetch LICENSE list: %s\n", err.Error())
 			return ExitCodeError

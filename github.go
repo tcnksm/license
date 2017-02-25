@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -12,7 +13,7 @@ func fetchLicenseList() ([]*github.License, error) {
 	client := github.NewClient(nil)
 
 	// Fetch list of LICENSE from Github API
-	list, res, err := client.Licenses.List()
+	list, res, err := client.Licenses.List(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +34,7 @@ func fetchLicense(key string) (string, error) {
 
 	// Fetch a LICENSE from Github API
 	Debugf("Fetch license from GitHub API by key: %s", key)
-	license, res, err := client.Licenses.Get(key)
+	license, res, err := client.Licenses.Get(context.Background(), key)
 	if err != nil {
 		return "", err
 	}
