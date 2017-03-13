@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -200,6 +201,10 @@ func (cli *CLI) Run(args []string) int {
 			fmt.Fprintf(cli.errStream, "Failed to show LICENSE list: %s", err.Error())
 			return ExitCodeError
 		}
+
+		sort.Slice(list, func(i, j int) bool {
+			return *list[i].Name < *list[j].Name
+		})
 
 		var buf bytes.Buffer
 		buf.WriteString("Which of the following do you want to use?\n")
