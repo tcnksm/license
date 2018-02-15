@@ -82,14 +82,14 @@ func getCache(key, path string) (string, error) {
 func cleanCache(key, path string) {
 	oldCacheFiles, err := filepath.Glob(filepath.Join(path, key+"-"+"*"))
 	if err != nil {
-		Debugf("Failed to glob cache files: %s", err.Error())
+		Debugf("Failed to glob cache files: %s", err)
 	}
 
 	for _, of := range oldCacheFiles {
 		Debugf("Delete old cache file: %s", of)
 		err := os.Remove(of)
 		if err != nil {
-			Debugf("Failed to delete old cache file %s: %s", of, err.Error())
+			Debugf("Failed to delete old cache file %s: %s", of, err)
 		}
 	}
 }

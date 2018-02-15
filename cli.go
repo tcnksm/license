@@ -130,7 +130,7 @@ func (cli *CLI) Run(args []string) int {
 		// Fetch list from GitHub API
 		list, res, err := client.Licenses.List(context.Background())
 		if err != nil {
-			cli.errorf("Failed to fetch LICENSE list: %s\n", err.Error())
+			cli.errorf("Failed to fetch LICENSE list: %s\n", err)
 			return ExitCodeError
 		}
 
@@ -192,7 +192,7 @@ func (cli *CLI) Run(args []string) int {
 		var err error
 		key, err = cli.Choose()
 		if err != nil {
-			cli.errorf("Failed to choose a LICENSE: %s\n", err.Error())
+			cli.errorf("Failed to choose a LICENSE: %s\n", err)
 			return ExitCodeError
 		}
 	}
@@ -203,7 +203,7 @@ func (cli *CLI) Run(args []string) int {
 
 		list, err := fetchLicenseList()
 		if err != nil {
-			cli.errorf("Failed to show LICENSE list: %s", err.Error())
+			cli.errorf("Failed to show LICENSE list: %s", err)
 			return ExitCodeError
 		}
 
@@ -224,7 +224,7 @@ func (cli *CLI) Run(args []string) int {
 
 		num, err := cli.AskNumber(len(list), defaultNum)
 		if err != nil {
-			cli.errorf("Failed to scan user input: %s\n", err.Error())
+			cli.errorf("Failed to scan user input: %s\n", err)
 			return ExitCodeError
 		}
 
@@ -233,7 +233,7 @@ func (cli *CLI) Run(args []string) int {
 
 	home, err := homedir.Dir()
 	if err != nil {
-		Debugf("Failed to get home directory: %s", err.Error())
+		Debugf("Failed to get home directory: %s", err)
 		noCache = true
 		home = "."
 	}
@@ -245,7 +245,7 @@ func (cli *CLI) Run(args []string) int {
 		var err error
 		body, err = getCache(key, cacheDir)
 		if err != nil {
-			Debugf("Failed to get cache: %s", err.Error())
+			Debugf("Failed to get cache: %s", err)
 		}
 	}
 
@@ -255,14 +255,14 @@ func (cli *CLI) Run(args []string) int {
 		var err error
 		body, err = fetchLicense(key)
 		if err != nil {
-			cli.errorf("Failed to get LICENSE file: %s\n", err.Error())
+			cli.errorf("Failed to get LICENSE file: %s\n", err)
 			return ExitCodeError
 		}
 
 		if !noCache {
 			err := setCache(body, key, cacheDir)
 			if err != nil {
-				Debugf("Failed to save cache: %s", err.Error())
+				Debugf("Failed to save cache: %s", err)
 			}
 		}
 
@@ -292,7 +292,7 @@ func (cli *CLI) Run(args []string) int {
 
 	licenseWriter, err := os.Create(output)
 	if err != nil {
-		cli.errorf("Failed to create file %s: %s\n", output, err.Error())
+		cli.errorf("Failed to create file %s: %s\n", output, err)
 		return ExitCodeError
 	}
 	defer licenseWriter.Close()
@@ -301,7 +301,7 @@ func (cli *CLI) Run(args []string) int {
 	// Write LICENSE body to file
 	_, err = io.Copy(licenseWriter, strings.NewReader(body))
 	if err != nil {
-		cli.errorf("Failed to write license body to %q: %s\n", output, err.Error())
+		cli.errorf("Failed to write license body to %q: %s\n", output, err)
 		return ExitCodeError
 	}
 
