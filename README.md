@@ -12,7 +12,7 @@
 
 ## Demo
 
-You can select a LICENSE from avairable list,
+You can select a LICENSE from available list,
 
 ![](http://g.recordit.co/IlnUBhCUHX.gif)
 

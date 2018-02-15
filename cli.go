@@ -374,12 +374,12 @@ func (cli *CLI) errorf(format string, a ...interface{}) (n int, err error) {
 var helpText = `Usage: license [option] [KEY]
 
   Generate LICENSE file. If you provide KEY, it will try to get LICENSE by
-  it. If you don't provide it, it will ask you to choose from avairable list.
-  You can check avairable LICESE list by '-list' option.
+  it. If you don't provide it, it will ask you to choose from available list.
+  You can check available LICESE list by '-list' option.
 
 Options:
 
-  -list               Show all avairable LICENSE list and quit.
+  -list               Show all available LICENSE list and quit.
                       It will fetch information from GitHub.
 
   -choose             Choose LICENSE like http://choosealicense.com/

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Generate all avairable licenses
+# Generate all available licenses
 set -e
 
 DIR=$(cd $(dirname ${0})/.. && pwd)
