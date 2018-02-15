@@ -212,16 +212,20 @@ func (cli *CLI) Run(args []string) int {
 			return *list[i].Name < *list[j].Name
 		})
 
+		// Will be a number corresponding to MIT, but not guaranteed
+		var defaultNum int
+
 		buf := bufio.NewWriterSize(cli.errStream, 512)
 		buf.WriteString("Which of the following do you want to use?\n")
 		for i, l := range list {
 			fmt.Fprintf(buf, "  %2d) %s\n", i+1, *l.Name)
+
+			// Use MIT as default
+			if *l.Key == "mit" {
+				defaultNum = i + 1
+			}
 		}
 		buf.Flush()
-
-		// Use MIT as default, it may change in future
-		// So should fix it
-		defaultNum := 13
 
 		num, err := cli.AskNumber(len(list), defaultNum)
 		if err != nil {
