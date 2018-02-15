@@ -269,20 +269,6 @@ func (cli *CLI) Run(args []string) int {
 		fetched = true
 	}
 
-	// Create output path if it is not exist
-	dir, _ := filepath.Split(output)
-	if len(dir) != 0 {
-		os.MkdirAll(dir, 0777)
-	}
-
-	licenseWriter, err := os.Create(output)
-	if err != nil {
-		cli.errorf("Failed to create file %s: %s\n", output, err.Error())
-		return ExitCodeError
-	}
-	defer licenseWriter.Close()
-	Debugf("Output filename: %s", output)
-
 	// Replace place holders
 	if !raw {
 		s, err := cli.runReplace(DefaultValue, body, replacement{
@@ -297,6 +283,20 @@ func (cli *CLI) Run(args []string) int {
 		}
 		body = s
 	}
+
+	// Create the output directory if necessary
+	dir, _ := filepath.Split(output)
+	if len(dir) != 0 {
+		os.MkdirAll(dir, 0777)
+	}
+
+	licenseWriter, err := os.Create(output)
+	if err != nil {
+		cli.errorf("Failed to create file %s: %s\n", output, err.Error())
+		return ExitCodeError
+	}
+	defer licenseWriter.Close()
+	Debugf("Output filename: %s", output)
 
 	// Write LICENSE body to file
 	_, err = io.Copy(licenseWriter, strings.NewReader(body))
