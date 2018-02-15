@@ -137,12 +137,13 @@ func (cli CLI) askString(query string, defaultStr string) (<-chan string, <-chan
 		cli.errorf("%s [default: %s] ", query, defaultStr)
 
 		reader := bufio.NewReader(os.Stdin)
-		b, _, err := reader.ReadLine()
+		line, err := reader.ReadString('\n')
 		if err != nil {
+			fmt.Fprintln(cli.outStream)
 			errCh <- &askError{kind: scanError, err: err}
 			return
 		}
-		line := string(b)
+		line = strings.TrimSuffix(strings.TrimSuffix(line, "\n"), "\r")
 		Debugf("Input: %q", line)
 
 		// Use Default value
