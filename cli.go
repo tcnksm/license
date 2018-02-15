@@ -65,7 +65,7 @@ func (cli *CLI) Run(args []string) int {
 	flags := flag.NewFlagSet(Name, flag.ContinueOnError)
 	flags.SetOutput(cli.errStream)
 	flags.Usage = func() {
-		fmt.Fprintf(cli.errStream, helpText)
+		cli.errorf(helpText)
 	}
 
 	flags.StringVar(&output, "output", DefaultOutput, "")
@@ -96,7 +96,7 @@ func (cli *CLI) Run(args []string) int {
 	// Show version
 	if *flVersion {
 
-		fmt.Fprintf(cli.errStream, "%s version %s\n", Name, Version)
+		cli.errorf("%s version %s\n", Name, Version)
 		select {
 		case <-time.After(CheckTimeout):
 			// Do nothing
@@ -126,12 +126,12 @@ func (cli *CLI) Run(args []string) int {
 		// Fetch list from GitHub API
 		list, res, err := client.Licenses.List(context.Background())
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "Failed to fetch LICENSE list: %s\n", err.Error())
+			cli.errorf("Failed to fetch LICENSE list: %s\n", err.Error())
 			return ExitCodeError
 		}
 
 		if res.StatusCode != http.StatusOK {
-			fmt.Fprintf(cli.errStream, "Invalid status code from GitHub\n %s\n", res.String())
+			cli.errorf("Invalid status code from GitHub\n %s\n", res.String())
 			return ExitCodeError
 		}
 
@@ -165,13 +165,13 @@ func (cli *CLI) Run(args []string) int {
 
 	// Check file exist or not
 	if _, err := os.Stat(output); !os.IsNotExist(err) && !force {
-		fmt.Fprintf(cli.errStream, "Cannot create file %q: file exists\n", output)
+		cli.errorf("Cannot create file %q: file exists\n", output)
 		return ExitCodeError
 	}
 
 	parsedArgs := flags.Args()
 	if len(parsedArgs) > 1 {
-		fmt.Fprintf(cli.errStream, "Invalid arguments\n")
+		cli.errorf("Invalid arguments\n")
 		return ExitCodeError
 	}
 
@@ -188,7 +188,7 @@ func (cli *CLI) Run(args []string) int {
 		var err error
 		key, err = cli.Choose()
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "Failed to choose a LICENSE: %s\n", err.Error())
+			cli.errorf("Failed to choose a LICENSE: %s\n", err.Error())
 			return ExitCodeError
 		}
 	}
@@ -199,7 +199,7 @@ func (cli *CLI) Run(args []string) int {
 
 		list, err := fetchLicenseList()
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "Failed to show LICENSE list: %s", err.Error())
+			cli.errorf("Failed to show LICENSE list: %s", err.Error())
 			return ExitCodeError
 		}
 
@@ -212,7 +212,7 @@ func (cli *CLI) Run(args []string) int {
 		for i, l := range list {
 			fmt.Fprintf(&buf, "  %2d) %s\n", i+1, *l.Name)
 		}
-		fmt.Fprintf(cli.errStream, buf.String())
+		cli.errorf(buf.String())
 
 		// Use MIT as default, it may change in future
 		// So should fix it
@@ -220,7 +220,7 @@ func (cli *CLI) Run(args []string) int {
 
 		num, err := cli.AskNumber(len(list), defaultNum)
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "Failed to scan user input: %s\n", err.Error())
+			cli.errorf("Failed to scan user input: %s\n", err.Error())
 			return ExitCodeError
 		}
 
@@ -251,7 +251,7 @@ func (cli *CLI) Run(args []string) int {
 		var err error
 		body, err = fetchLicense(key)
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "Failed to get LICENSE file: %s\n", err.Error())
+			cli.errorf("Failed to get LICENSE file: %s\n", err.Error())
 			return ExitCodeError
 		}
 
@@ -273,7 +273,7 @@ func (cli *CLI) Run(args []string) int {
 
 	licenseWriter, err := os.Create(output)
 	if err != nil {
-		fmt.Fprintf(cli.errStream, "Failed to create file %s: %s\n", output, err.Error())
+		cli.errorf("Failed to create file %s: %s\n", output, err.Error())
 		return ExitCodeError
 	}
 	defer licenseWriter.Close()
@@ -292,7 +292,7 @@ func (cli *CLI) Run(args []string) int {
 
 		yearFolders := findPlaceholders(body, yearKeys)
 		for _, f := range yearFolders {
-			fmt.Fprintf(cli.errStream, "----> Replace placeholder %q to %q in LICENSE body\n", f, year)
+			cli.errorf("----> Replace placeholder %q to %q in LICENSE body\n", f, year)
 			body = strings.Replace(body, f, year, -1)
 		}
 
@@ -303,7 +303,7 @@ func (cli *CLI) Run(args []string) int {
 		}
 		body, err = cli.ReplacePlaceholder(body, nameKeys, "Input author name", defaultAuthor, optionAuthor)
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "%s\n", err)
+			cli.errorf("%s\n", err)
 			return ExitCodeError
 		}
 
@@ -314,14 +314,14 @@ func (cli *CLI) Run(args []string) int {
 		}
 		body, err = cli.ReplacePlaceholder(body, nameKeys, "Input email", defaultEmail, optionEmail)
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "%s\n", err)
+			cli.errorf("%s\n", err)
 			return ExitCodeError
 		}
 
 		// Replace project name if needed
 		body, err = cli.ReplacePlaceholder(body, projectKeys, "Input project name", DoNothing, optionProject)
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "%s\n", err)
+			cli.errorf("%s\n", err)
 			return ExitCodeError
 		}
 	}
@@ -329,7 +329,7 @@ func (cli *CLI) Run(args []string) int {
 	// Write LICENSE body to file
 	_, err = io.Copy(licenseWriter, strings.NewReader(body))
 	if err != nil {
-		fmt.Fprintf(cli.errStream, "Failed to write license body to %q: %s\n", output, err.Error())
+		cli.errorf("Failed to write license body to %q: %s\n", output, err.Error())
 		return ExitCodeError
 	}
 
@@ -340,9 +340,14 @@ func (cli *CLI) Run(args []string) int {
 		msg.WriteString(" (Use cache)")
 	}
 
-	fmt.Fprintf(cli.errStream, msg.String()+"\n")
+	msg.WriteByte('\n')
+	io.Copy(cli.errStream, &msg)
 
 	return ExitCodeOK
+}
+
+func (cli *CLI) errorf(format string, a ...interface{}) (n int, err error) {
+	return fmt.Fprintf(cli.errStream, format, a...)
 }
 
 var helpText = `Usage: license [option] [KEY]

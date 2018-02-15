@@ -48,7 +48,7 @@ func (cli CLI) askNumber(max int, defaultNum int) (<-chan int, <-chan error) {
 				errCh <- err
 				break
 			}
-			fmt.Fprintf(cli.errStream, "  is an invalid choice: %s.\n\n", err)
+			cli.errorf("  is an invalid choice: %s.\n\n", err)
 		}
 	}()
 	return result, errCh
@@ -81,7 +81,7 @@ func (a *askError) isInvalidInput() bool {
 }
 
 func (cli CLI) askNumber1(max int, defaultNum int) (int, *askError) {
-	fmt.Fprintf(cli.errStream, "Your choice? [default: %d] ", defaultNum)
+	cli.errorf("Your choice? [default: %d] ", defaultNum)
 	reader := bufio.NewReader(os.Stdin)
 	line, err := reader.ReadString('\n')
 	if err != nil {
@@ -134,7 +134,7 @@ func (cli CLI) askString(query string, defaultStr string) (<-chan string, <-chan
 	result := make(chan string, 1)
 	errCh := make(chan error, 1)
 	go func() {
-		fmt.Fprintf(cli.errStream, "%s [default: %s] ", query, defaultStr)
+		cli.errorf("%s [default: %s] ", query, defaultStr)
 
 		reader := bufio.NewReader(os.Stdin)
 		b, _, err := reader.ReadLine()
@@ -174,7 +174,7 @@ func (cli *CLI) ReplacePlaceholder(body string, keys []string, query, defaultRep
 
 		if ans != DoNothing {
 			for _, f := range folders {
-				fmt.Fprintf(cli.errStream, "----> Replace placeholder %q to %q in LICENSE body\n", f, ans)
+				cli.errorf("----> Replace placeholder %q to %q in LICENSE body\n", f, ans)
 				body = strings.Replace(body, f, ans, -1)
 			}
 		}
@@ -201,7 +201,7 @@ func (cli *CLI) Choose() (string, error) {
 		buf.WriteString("Which version do you want?\n")
 		buf.WriteString("  1) V2\n")
 		buf.WriteString("  2) V3\n")
-		fmt.Fprintf(cli.errStream, buf.String())
+		cli.errorf(buf.String())
 
 		num, err = cli.AskNumber(2, 1)
 		if err != nil {
