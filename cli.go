@@ -204,7 +204,7 @@ func (cli *CLI) Run(args []string) int {
 
 		list, err := fetchLicenseList()
 		if err != nil {
-			cli.errorf("Failed to show LICENSE list: %s", err)
+			cli.errorf("Failed to show LICENSE list: %s\n", err)
 			return ExitCodeError
 		}
 
