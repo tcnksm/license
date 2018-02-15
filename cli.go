@@ -45,6 +45,10 @@ type CLI struct {
 	outStream, errStream io.Writer
 }
 
+type replacement struct {
+	year, author, email, project string
+}
+
 // Run invokes the CLI with the given arguments.
 func (cli *CLI) Run(args []string) int {
 
@@ -281,49 +285,17 @@ func (cli *CLI) Run(args []string) int {
 
 	// Replace place holders
 	if !raw {
-
-		// Replace year if needed
-		var year string
-		if optionYear != DefaultValue {
-			year = optionYear
-		} else {
-			year = strconv.Itoa(time.Now().Year())
-		}
-
-		yearFolders := findPlaceholders(body, yearKeys)
-		for _, f := range yearFolders {
-			cli.errorf("----> Replace placeholder %q to %q in LICENSE body\n", f, year)
-			body = strings.Replace(body, f, year, -1)
-		}
-
-		// Replace author name if needed
-		defaultAuthor, _ := gitconfig.GithubUser()
-		if len(defaultAuthor) == 0 {
-			defaultAuthor = DoNothing
-		}
-		body, err = cli.ReplacePlaceholder(body, nameKeys, "Input author name", defaultAuthor, optionAuthor)
+		s, err := cli.runReplace(DefaultValue, body, replacement{
+			year:    optionYear,
+			author:  optionAuthor,
+			email:   optionEmail,
+			project: optionProject,
+		})
 		if err != nil {
-			cli.errorf("%s\n", err)
+			cli.errorf("Failed to replace a placeholder: %s\n", err)
 			return ExitCodeError
 		}
-
-		// Replace email if needed
-		defaultEmail, _ := gitconfig.Email()
-		if len(defaultEmail) == 0 {
-			defaultEmail = DoNothing
-		}
-		body, err = cli.ReplacePlaceholder(body, nameKeys, "Input email", defaultEmail, optionEmail)
-		if err != nil {
-			cli.errorf("%s\n", err)
-			return ExitCodeError
-		}
-
-		// Replace project name if needed
-		body, err = cli.ReplacePlaceholder(body, projectKeys, "Input project name", DoNothing, optionProject)
-		if err != nil {
-			cli.errorf("%s\n", err)
-			return ExitCodeError
-		}
+		body = s
 	}
 
 	// Write LICENSE body to file
@@ -344,6 +316,50 @@ func (cli *CLI) Run(args []string) int {
 	io.Copy(cli.errStream, &msg)
 
 	return ExitCodeOK
+}
+
+func (cli *CLI) runReplace(DefaultValue, body string, option replacement) (string, error) {
+	// Replace year if needed
+	var year string
+	if option.year != DefaultValue {
+		year = option.year
+	} else {
+		year = strconv.Itoa(time.Now().Year())
+	}
+
+	yearFolders := findPlaceholders(body, yearKeys)
+	for _, f := range yearFolders {
+		cli.errorf("----> Replace placeholder %q to %q in LICENSE body\n", f, year)
+		body = strings.Replace(body, f, year, -1)
+	}
+
+	// Replace author name if needed
+	defaultAuthor, _ := gitconfig.GithubUser()
+	if len(defaultAuthor) == 0 {
+		defaultAuthor = DoNothing
+	}
+	body, err := cli.ReplacePlaceholder(body, nameKeys, "Input author name", defaultAuthor, option.author)
+	if err != nil {
+		return "", err
+	}
+
+	// Replace email if needed
+	defaultEmail, _ := gitconfig.Email()
+	if len(defaultEmail) == 0 {
+		defaultEmail = DoNothing
+	}
+	body, err = cli.ReplacePlaceholder(body, nameKeys, "Input email", defaultEmail, option.email)
+	if err != nil {
+		return "", err
+	}
+
+	// Replace project name if needed
+	body, err = cli.ReplacePlaceholder(body, projectKeys, "Input project name", DoNothing, option.project)
+	if err != nil {
+		return "", err
+	}
+
+	return body, nil
 }
 
 func (cli *CLI) errorf(format string, a ...interface{}) (n int, err error) {
