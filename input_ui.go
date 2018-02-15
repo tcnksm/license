@@ -17,7 +17,6 @@ var errInterrupt = errors.New("interrupted")
 
 // AskNumber asks user to choose number from 1 to max
 func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
-
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
 	defer signal.Stop(sigCh)
@@ -114,7 +113,6 @@ func (cli CLI) askNumber1(max int, defaultNum int) (int, *askError) {
 
 // AskString asks user to input some string
 func (cli CLI) AskString(query string, defaultStr string) (string, error) {
-
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
 	defer signal.Stop(sigCh)
