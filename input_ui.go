@@ -13,6 +13,8 @@ import (
 	"github.com/mitchellh/colorstring"
 )
 
+var errInterrupt = errors.New("interrupted")
+
 // AskNumber asks user to choose number from 1 to max
 func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
 
@@ -24,7 +26,8 @@ func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
 
 	select {
 	case <-sigCh:
-		return -1, fmt.Errorf("interrupted")
+		fmt.Fprintln(cli.outStream)
+		return -1, errInterrupt
 	case num := <-result:
 		return num, nil
 	case err := <-errCh:
@@ -120,7 +123,8 @@ func (cli CLI) AskString(query string, defaultStr string) (string, error) {
 
 	select {
 	case <-sigCh:
-		return "", fmt.Errorf("interrupted")
+		fmt.Fprintln(cli.outStream)
+		return "", errInterrupt
 	case str := <-result:
 		return str, nil
 	case err := <-errCh:
@@ -137,7 +141,7 @@ func (cli CLI) askString(query string, defaultStr string) (<-chan string, <-chan
 		reader := bufio.NewReader(os.Stdin)
 		b, _, err := reader.ReadLine()
 		if err != nil {
-			errCh <- fmt.Errorf("scanning from stdin: %s", err)
+			errCh <- &askError{kind: scanError, err: err}
 			return
 		}
 		line := string(b)
