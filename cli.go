@@ -301,17 +301,29 @@ func (cli *CLI) Run(args []string) int {
 		if len(defaultAuthor) == 0 {
 			defaultAuthor = DoNothing
 		}
-		body = cli.ReplacePlaceholder(body, nameKeys, "Input author name", defaultAuthor, optionAuthor)
+		body, err = cli.ReplacePlaceholder(body, nameKeys, "Input author name", defaultAuthor, optionAuthor)
+		if err != nil {
+			fmt.Fprintf(cli.errStream, "%s\n", err)
+			return ExitCodeError
+		}
 
 		// Replace email if needed
 		defaultEmail, _ := gitconfig.Email()
 		if len(defaultEmail) == 0 {
 			defaultEmail = DoNothing
 		}
-		body = cli.ReplacePlaceholder(body, nameKeys, "Input email", defaultEmail, optionEmail)
+		body, err = cli.ReplacePlaceholder(body, nameKeys, "Input email", defaultEmail, optionEmail)
+		if err != nil {
+			fmt.Fprintf(cli.errStream, "%s\n", err)
+			return ExitCodeError
+		}
 
 		// Replace project name if needed
-		body = cli.ReplacePlaceholder(body, projectKeys, "Input project name", DoNothing, optionProject)
+		body, err = cli.ReplacePlaceholder(body, projectKeys, "Input project name", DoNothing, optionProject)
+		if err != nil {
+			fmt.Fprintf(cli.errStream, "%s\n", err)
+			return ExitCodeError
+		}
 	}
 
 	// Write LICENSE body to file

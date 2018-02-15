@@ -153,7 +153,7 @@ func (cli CLI) askString(query string, defaultStr string) (<-chan string, <-chan
 	return result, errCh
 }
 
-func (cli *CLI) ReplacePlaceholder(body string, keys []string, query, defaultReplace, optionValue string) string {
+func (cli *CLI) ReplacePlaceholder(body string, keys []string, query, defaultReplace, optionValue string) (string, error) {
 	// Repalce name if needed
 	folders := findPlaceholders(body, keys)
 
@@ -163,7 +163,11 @@ func (cli *CLI) ReplacePlaceholder(body string, keys []string, query, defaultRep
 			ans = optionValue
 		} else {
 			// Ask or Confirm default value from user
-			ans, _ = cli.AskString(query, defaultReplace)
+			s, err := cli.AskString(query, defaultReplace)
+			if err != nil {
+				return "", err
+			}
+			ans = s
 		}
 
 		if ans != DoNothing {
@@ -174,7 +178,7 @@ func (cli *CLI) ReplacePlaceholder(body string, keys []string, query, defaultRep
 		}
 	}
 
-	return body
+	return body, nil
 }
 
 // Choose shows shows LICENSE description from http://choosealicense.com/
