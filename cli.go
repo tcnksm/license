@@ -198,9 +198,9 @@ func (cli *CLI) Run(args []string) int {
 		}
 	}
 
-	// Show all LICENSE available and ask an user to select.
+	// Show all LICENSE available and ask a user to select.
 	if len(key) == 0 {
-		Debugf("Show all LICENSE available and ask an user to select")
+		Debugf("Show all LICENSE available and ask a user to select")
 
 		list, err := fetchLicenseList()
 		if err != nil {
