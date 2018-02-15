@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"flag"
@@ -150,7 +151,7 @@ func (cli *CLI) Run(args []string) int {
 		}
 
 		// Write LICENSE list as a table
-		outBuffer := new(bytes.Buffer)
+		outBuffer := bufio.NewWriterSize(cli.outStream, 1024)
 		table := tablewriter.NewWriter(outBuffer)
 
 		header := []string{"Key", "Name"}
@@ -162,7 +163,7 @@ func (cli *CLI) Run(args []string) int {
 		table.Render()
 
 		outBuffer.WriteString("See more about these LICENSE at http://choosealicense.com/licenses/\n")
-		fmt.Fprintf(cli.outStream, outBuffer.String())
+		outBuffer.Flush()
 
 		return ExitCodeOK
 	}
@@ -211,12 +212,12 @@ func (cli *CLI) Run(args []string) int {
 			return *list[i].Name < *list[j].Name
 		})
 
-		var buf bytes.Buffer
+		buf := bufio.NewWriterSize(cli.errStream, 512)
 		buf.WriteString("Which of the following do you want to use?\n")
 		for i, l := range list {
-			fmt.Fprintf(&buf, "  %2d) %s\n", i+1, *l.Name)
+			fmt.Fprintf(buf, "  %2d) %s\n", i+1, *l.Name)
 		}
-		cli.errorf(buf.String())
+		buf.Flush()
 
 		// Use MIT as default, it may change in future
 		// So should fix it
