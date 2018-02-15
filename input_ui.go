@@ -20,6 +20,7 @@ func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
 	defer signal.Stop(sigCh)
 
 	result := make(chan int, 1)
+	errCh := make(chan error, 1)
 	go func() {
 		for {
 
@@ -27,7 +28,9 @@ func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
 			reader := bufio.NewReader(os.Stdin)
 			line, err := reader.ReadString('\n')
 			if err != nil {
-				Debugf("Failed to scan stdin: %s", err.Error())
+				fmt.Fprintln(cli.outStream)
+				errCh <- fmt.Errorf("scanning from stdin: %s", err)
+				break
 			}
 			line = strings.TrimSpace(line)
 
@@ -62,6 +65,8 @@ func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
 		return -1, fmt.Errorf("interrupted")
 	case num := <-result:
 		return num, nil
+	case err := <-errCh:
+		return -1, err
 	}
 }
 
