@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -19,46 +20,7 @@ func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
 	signal.Notify(sigCh, os.Interrupt)
 	defer signal.Stop(sigCh)
 
-	result := make(chan int, 1)
-	errCh := make(chan error, 1)
-	go func() {
-		for {
-
-			fmt.Fprintf(cli.errStream, "Your choice? [default: %d] ", defaultNum)
-			reader := bufio.NewReader(os.Stdin)
-			line, err := reader.ReadString('\n')
-			if err != nil {
-				fmt.Fprintln(cli.outStream)
-				errCh <- fmt.Errorf("scanning from stdin: %s", err)
-				break
-			}
-			line = strings.TrimSpace(line)
-
-			Debugf("Input: %q", line)
-
-			// Use Default value
-			if line == "" {
-				result <- defaultNum
-				break
-			}
-
-			// Convert string to int
-			n, err := strconv.Atoi(line)
-			if err != nil {
-				fmt.Fprintf(cli.errStream, "  is not a valid choice. Choose by number.\n\n")
-				continue
-			}
-
-			// Check input is in range
-			if n < 1 || max < n {
-				fmt.Fprintf(cli.errStream, "  is not a valid choice. Choose from 1 to %d\n\n", max)
-				continue
-			}
-
-			result <- n
-			break
-		}
-	}()
+	result, errCh := cli.askNumber(max, defaultNum)
 
 	select {
 	case <-sigCh:
@@ -70,6 +32,83 @@ func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
 	}
 }
 
+func (cli CLI) askNumber(max int, defaultNum int) (<-chan int, <-chan error) {
+	result := make(chan int, 1)
+	errCh := make(chan error, 1)
+	go func() {
+		for {
+			n, err := cli.askNumber1(max, defaultNum)
+			if err == nil {
+				result <- n
+				break
+			}
+			if !err.isInvalidInput() {
+				errCh <- err
+				break
+			}
+			fmt.Fprintf(cli.errStream, "  is an invalid choice: %s.\n\n", err)
+		}
+	}()
+	return result, errCh
+}
+
+type askError struct {
+	kind askErrorKind
+	err  error
+}
+
+type askErrorKind int
+
+const (
+	scanError askErrorKind = iota + 1
+	invalidInput
+)
+
+func (a *askError) Error() string {
+	switch a.kind {
+	case scanError:
+		return fmt.Sprintf("scanning from stdin: %s", a.err)
+	case invalidInput:
+		return a.err.Error()
+	}
+	panic("unreachable")
+}
+
+func (a *askError) isInvalidInput() bool {
+	return a.kind == invalidInput
+}
+
+func (cli CLI) askNumber1(max int, defaultNum int) (int, *askError) {
+	fmt.Fprintf(cli.errStream, "Your choice? [default: %d] ", defaultNum)
+	reader := bufio.NewReader(os.Stdin)
+	line, err := reader.ReadString('\n')
+	if err != nil {
+		fmt.Fprintln(cli.outStream)
+		return 0, &askError{kind: scanError, err: err}
+	}
+	line = strings.TrimSpace(line)
+
+	Debugf("Input: %q", line)
+
+	// Use Default value
+	if line == "" {
+		return defaultNum, nil
+	}
+
+	// Convert string to int
+	n, err := strconv.Atoi(line)
+	if err != nil {
+		return 0, &askError{kind: invalidInput, err: errors.New("choose by number")}
+	}
+
+	// Check input is in range
+	if n < 1 || max < n {
+		return 0, &askError{kind: invalidInput, err: fmt.Errorf("choose from 1 to %d", max)}
+	}
+
+	return n, nil
+}
+
 // AskString asks user to input some string
 func (cli CLI) AskString(query string, defaultStr string) (string, error) {
 
@@ -77,32 +116,41 @@ func (cli CLI) AskString(query string, defaultStr string) (string, error) {
 	signal.Notify(sigCh, os.Interrupt)
 	defer signal.Stop(sigCh)
 
-	result := make(chan string, 1)
-	go func() {
-		fmt.Fprintf(cli.errStream, "%s [default: %s] ", query, defaultStr)
-
-		reader := bufio.NewReader(os.Stdin)
-		b, _, err := reader.ReadLine()
-		if err != nil {
-			Debugf("Failed to scan stdin: %s", err.Error())
-		}
-		line := string(b)
-		Debugf("Input: %q", line)
-
-		// Use Default value
-		if line == "" {
-			result <- defaultStr
-		}
-
-		result <- line
-	}()
+	result, errCh := cli.askString(query, defaultStr)
 
 	select {
 	case <-sigCh:
 		return "", fmt.Errorf("interrupted")
 	case str := <-result:
 		return str, nil
+	case err := <-errCh:
+		return "", err
 	}
+}
+
+func (cli CLI) askString(query string, defaultStr string) (<-chan string, <-chan error) {
+	result := make(chan string, 1)
+	errCh := make(chan error, 1)
+	go func() {
+		fmt.Fprintf(cli.errStream, "%s [default: %s] ", query, defaultStr)
+
+		reader := bufio.NewReader(os.Stdin)
+		b, _, err := reader.ReadLine()
+		if err != nil {
+			errCh <- fmt.Errorf("scanning from stdin: %s", err)
+			return
+		}
+		line := string(b)
+		Debugf("Input: %q", line)
+
+		// Use Default value
+		if line == "" {
+			line = defaultStr
+		}
+
+		result <- line
+	}()
+	return result, errCh
 }
 
 func (cli *CLI) ReplacePlaceholder(body string, keys []string, query, defaultReplace, optionValue string) string {
