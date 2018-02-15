@@ -88,7 +88,7 @@ func (cli *CLI) Run(args []string) int {
 	// This is only for dev (and test)
 	flListkeys := flags.Bool("list-keys", false, "")
 
-	// Parse commandline flag
+	// Parse commandline flags
 	if err := flags.Parse(args[1:]); err != nil {
 		return ExitCodeError
 	}
@@ -116,14 +116,14 @@ func (cli *CLI) Run(args []string) int {
 		Debugf("Run as DEBUG mode")
 	}
 
-	// Show list of LICENSE and quit
+	// Show a list of LICENSE and quit
 	if *flList || *flListkeys {
 		Debugf("Show list of LICENSE")
 
 		// Create default client
 		client := github.NewClient(nil)
 
-		// Fetch list from Github API
+		// Fetch list from GitHub API
 		list, res, err := client.Licenses.List(context.Background())
 		if err != nil {
 			fmt.Fprintf(cli.errStream, "Failed to fetch LICENSE list: %s\n", err.Error())
@@ -193,9 +193,9 @@ func (cli *CLI) Run(args []string) int {
 		}
 	}
 
-	// Show all LICENSE available and ask user to select.
+	// Show all LICENSE available and ask an user to select.
 	if len(key) == 0 {
-		Debugf("Show all LICENSE available and ask user to select")
+		Debugf("Show all LICENSE available and ask an user to select")
 
 		list, err := fetchLicenseList()
 		if err != nil {

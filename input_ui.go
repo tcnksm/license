@@ -15,7 +15,7 @@ import (
 
 var errInterrupt = errors.New("interrupted")
 
-// AskNumber asks user to choose number from 1 to max
+// AskNumber asks users to choose a number from 1 to max.
 func (cli CLI) AskNumber(max int, defaultNum int) (int, error) {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
@@ -92,7 +92,7 @@ func (cli CLI) askNumber1(max int, defaultNum int) (int, *askError) {
 
 	Debugf("Input: %q", line)
 
-	// Use Default value
+	// Use the default value
 	if line == "" {
 		return defaultNum, nil
 	}
@@ -103,7 +103,7 @@ func (cli CLI) askNumber1(max int, defaultNum int) (int, *askError) {
 		return 0, &askError{kind: invalidInput, err: errors.New("choose by number")}
 	}
 
-	// Check input is in range
+	// Check the input is in range
 	if n < 1 || max < n {
 		return 0, &askError{kind: invalidInput, err: fmt.Errorf("choose from 1 to %d", max)}
 	}
@@ -111,7 +111,7 @@ func (cli CLI) askNumber1(max int, defaultNum int) (int, *askError) {
 	return n, nil
 }
 
-// AskString asks user to input some string
+// AskString asks users to input some string
 func (cli CLI) AskString(query string, defaultStr string) (string, error) {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt)
@@ -156,7 +156,7 @@ func (cli CLI) askString(query string, defaultStr string) (<-chan string, <-chan
 }
 
 func (cli *CLI) ReplacePlaceholder(body string, keys []string, query, defaultReplace, optionValue string) (string, error) {
-	// Repalce name if needed
+	// Replace name if needed
 	folders := findPlaceholders(body, keys)
 
 	if len(folders) > 0 {
@@ -183,9 +183,9 @@ func (cli *CLI) ReplacePlaceholder(body string, keys []string, query, defaultRep
 	return body, nil
 }
 
-// Choose shows shows LICENSE description from http://choosealicense.com/
-// And ask user to choose LICENSE. It returns key to fetch LICENSE file.
-// If something is wrong, return error.
+// Choose shows LICENSE description from http://choosealicense.com/.
+// And ask users to choose LICENSE. It returns key to fetch LICENSE file.
+// If something is wrong, returns error.
 func (cli *CLI) Choose() (string, error) {
 	colorstring.Fprintf(cli.errStream, chooseText)
 
@@ -194,7 +194,7 @@ func (cli *CLI) Choose() (string, error) {
 		return "", err
 	}
 
-	// If user selects 3, should ask user GPL V2 or V3
+	// If the user selects 3, should ask whether GPL V2 or V3
 	if num == 3 {
 		var buf bytes.Buffer
 		buf.WriteString("\n")
