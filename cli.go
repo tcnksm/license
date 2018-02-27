@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"flag"
@@ -45,6 +46,10 @@ type CLI struct {
 	outStream, errStream io.Writer
 }
 
+type replacement struct {
+	year, author, email, project string
+}
+
 // Run invokes the CLI with the given arguments.
 func (cli *CLI) Run(args []string) int {
 
@@ -65,7 +70,7 @@ func (cli *CLI) Run(args []string) int {
 	flags := flag.NewFlagSet(Name, flag.ContinueOnError)
 	flags.SetOutput(cli.errStream)
 	flags.Usage = func() {
-		fmt.Fprintf(cli.errStream, helpText)
+		cli.errorf(helpText)
 	}
 
 	flags.StringVar(&output, "output", DefaultOutput, "")
@@ -88,7 +93,7 @@ func (cli *CLI) Run(args []string) int {
 	// This is only for dev (and test)
 	flListkeys := flags.Bool("list-keys", false, "")
 
-	// Parse commandline flag
+	// Parse commandline flags
 	if err := flags.Parse(args[1:]); err != nil {
 		return ExitCodeError
 	}
@@ -96,7 +101,7 @@ func (cli *CLI) Run(args []string) int {
 	// Show version
 	if *flVersion {
 
-		fmt.Fprintf(cli.errStream, "%s version %s\n", Name, Version)
+		cli.errorf("%s version %s\n", Name, Version)
 		select {
 		case <-time.After(CheckTimeout):
 			// Do nothing
@@ -116,22 +121,22 @@ func (cli *CLI) Run(args []string) int {
 		Debugf("Run as DEBUG mode")
 	}
 
-	// Show list of LICENSE and quit
+	// Show a list of LICENSE and quit
 	if *flList || *flListkeys {
 		Debugf("Show list of LICENSE")
 
 		// Create default client
 		client := github.NewClient(nil)
 
-		// Fetch list from Github API
+		// Fetch list from GitHub API
 		list, res, err := client.Licenses.List(context.Background())
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "Failed to fetch LICENSE list: %s\n", err.Error())
+			cli.errorf("Failed to fetch LICENSE list: %s\n", err)
 			return ExitCodeError
 		}
 
 		if res.StatusCode != http.StatusOK {
-			fmt.Fprintf(cli.errStream, "Invalid status code from GitHub\n %s\n", res.String())
+			cli.errorf("Invalid status code from GitHub\n %s\n", res.String())
 			return ExitCodeError
 		}
 
@@ -146,7 +151,7 @@ func (cli *CLI) Run(args []string) int {
 		}
 
 		// Write LICENSE list as a table
-		outBuffer := new(bytes.Buffer)
+		outBuffer := bufio.NewWriterSize(cli.outStream, 1024)
 		table := tablewriter.NewWriter(outBuffer)
 
 		header := []string{"Key", "Name"}
@@ -158,20 +163,20 @@ func (cli *CLI) Run(args []string) int {
 		table.Render()
 
 		outBuffer.WriteString("See more about these LICENSE at http://choosealicense.com/licenses/\n")
-		fmt.Fprintf(cli.outStream, outBuffer.String())
+		outBuffer.Flush()
 
 		return ExitCodeOK
 	}
 
 	// Check file exist or not
 	if _, err := os.Stat(output); !os.IsNotExist(err) && !force {
-		fmt.Fprintf(cli.errStream, "Cannot create file %q: file exists\n", output)
+		cli.errorf("Cannot create file %q: file exists\n", output)
 		return ExitCodeError
 	}
 
 	parsedArgs := flags.Args()
 	if len(parsedArgs) > 1 {
-		fmt.Fprintf(cli.errStream, "Invalid arguments\n")
+		cli.errorf("Invalid arguments\n")
 		return ExitCodeError
 	}
 
@@ -188,18 +193,18 @@ func (cli *CLI) Run(args []string) int {
 		var err error
 		key, err = cli.Choose()
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "Failed to choose a LICENSE: %s\n", err.Error())
+			cli.errorf("Failed to choose a LICENSE: %s\n", err)
 			return ExitCodeError
 		}
 	}
 
-	// Show all LICENSE available and ask user to select.
+	// Show all LICENSE available and ask a user to select.
 	if len(key) == 0 {
-		Debugf("Show all LICENSE available and ask user to select")
+		Debugf("Show all LICENSE available and ask a user to select")
 
 		list, err := fetchLicenseList()
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "Failed to show LICENSE list: %s", err.Error())
+			cli.errorf("Failed to show LICENSE list: %s\n", err)
 			return ExitCodeError
 		}
 
@@ -207,29 +212,35 @@ func (cli *CLI) Run(args []string) int {
 			return *list[i].Name < *list[j].Name
 		})
 
-		var buf bytes.Buffer
+		// Will be a number corresponding to MIT, but not guaranteed
+		var defaultNum int
+
+		buf := bufio.NewWriterSize(cli.errStream, 512)
 		buf.WriteString("Which of the following do you want to use?\n")
 		for i, l := range list {
-			fmt.Fprintf(&buf, "  %2d) %s\n", i+1, *l.Name)
-		}
-		fmt.Fprintf(cli.errStream, buf.String())
+			fmt.Fprintf(buf, "  %2d) %s\n", i+1, *l.Name)
 
-		// Use MIT as default, it may change in future
-		// So should fix it
-		defaultNum := 13
+			// Use MIT as default
+			if *l.Key == "mit" {
+				defaultNum = i + 1
+			}
+		}
+		buf.Flush()
 
 		num, err := cli.AskNumber(len(list), defaultNum)
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "Failed to scan user input: %s\n", err.Error())
+			cli.errorf("Failed to scan user input: %s\n", err)
 			return ExitCodeError
 		}
 
-		key = *(list[num-1]).Key
+		l := list[num-1]
+		key = *l.Key
+		fmt.Fprintf(cli.outStream, "You chose %#q.\n", *l.Name)
 	}
 
 	home, err := homedir.Dir()
 	if err != nil {
-		Debugf("Failed to get home directory: %s", err.Error())
+		Debugf("Failed to get home directory: %s", err)
 		noCache = true
 		home = "."
 	}
@@ -241,7 +252,7 @@ func (cli *CLI) Run(args []string) int {
 		var err error
 		body, err = getCache(key, cacheDir)
 		if err != nil {
-			Debugf("Failed to get cache: %s", err.Error())
+			Debugf("Failed to get cache: %s", err)
 		}
 	}
 
@@ -251,21 +262,36 @@ func (cli *CLI) Run(args []string) int {
 		var err error
 		body, err = fetchLicense(key)
 		if err != nil {
-			fmt.Fprintf(cli.errStream, "Failed to get LICENSE file: %s\n", err.Error())
+			cli.errorf("Failed to get LICENSE file: %s\n", err)
 			return ExitCodeError
 		}
 
 		if !noCache {
 			err := setCache(body, key, cacheDir)
 			if err != nil {
-				Debugf("Failed to save cache: %s", err.Error())
+				Debugf("Failed to save cache: %s", err)
 			}
 		}
 
 		fetched = true
 	}
 
-	// Create output path if it is not exist
+	// Replace place holders
+	if !raw {
+		s, err := cli.runReplace(DefaultValue, body, replacement{
+			year:    optionYear,
+			author:  optionAuthor,
+			email:   optionEmail,
+			project: optionProject,
+		})
+		if err != nil {
+			cli.errorf("Failed to replace a placeholder: %s\n", err)
+			return ExitCodeError
+		}
+		body = s
+	}
+
+	// Create the output directory if necessary
 	dir, _ := filepath.Split(output)
 	if len(dir) != 0 {
 		os.MkdirAll(dir, 0777)
@@ -273,51 +299,16 @@ func (cli *CLI) Run(args []string) int {
 
 	licenseWriter, err := os.Create(output)
 	if err != nil {
-		fmt.Fprintf(cli.errStream, "Failed to create file %s: %s\n", output, err.Error())
+		cli.errorf("Failed to create file %s: %s\n", output, err)
 		return ExitCodeError
 	}
 	defer licenseWriter.Close()
 	Debugf("Output filename: %s", output)
 
-	// Replace place holders
-	if !raw {
-
-		// Replace year if needed
-		var year string
-		if optionYear != DefaultValue {
-			year = optionYear
-		} else {
-			year = strconv.Itoa(time.Now().Year())
-		}
-
-		yearFolders := findPlaceholders(body, yearKeys)
-		for _, f := range yearFolders {
-			fmt.Fprintf(cli.errStream, "----> Replace placeholder %q to %q in LICENSE body\n", f, year)
-			body = strings.Replace(body, f, year, -1)
-		}
-
-		// Replace author name if needed
-		defaultAuthor, _ := gitconfig.GithubUser()
-		if len(defaultAuthor) == 0 {
-			defaultAuthor = DoNothing
-		}
-		body = cli.ReplacePlaceholder(body, nameKeys, "Input author name", defaultAuthor, optionAuthor)
-
-		// Replace email if needed
-		defaultEmail, _ := gitconfig.Email()
-		if len(defaultEmail) == 0 {
-			defaultEmail = DoNothing
-		}
-		body = cli.ReplacePlaceholder(body, nameKeys, "Input email", defaultEmail, optionEmail)
-
-		// Replace project name if needed
-		body = cli.ReplacePlaceholder(body, projectKeys, "Input project name", DoNothing, optionProject)
-	}
-
 	// Write LICENSE body to file
 	_, err = io.Copy(licenseWriter, strings.NewReader(body))
 	if err != nil {
-		fmt.Fprintf(cli.errStream, "Failed to write license body to %q: %s\n", output, err.Error())
+		cli.errorf("Failed to write license body to %q: %s\n", output, err)
 		return ExitCodeError
 	}
 
@@ -328,20 +319,69 @@ func (cli *CLI) Run(args []string) int {
 		msg.WriteString(" (Use cache)")
 	}
 
-	fmt.Fprintf(cli.errStream, msg.String()+"\n")
+	msg.WriteByte('\n')
+	io.Copy(cli.errStream, &msg)
 
 	return ExitCodeOK
+}
+
+func (cli *CLI) runReplace(DefaultValue, body string, option replacement) (string, error) {
+	// Replace year if needed
+	var year string
+	if option.year != DefaultValue {
+		year = option.year
+	} else {
+		year = strconv.Itoa(time.Now().Year())
+	}
+
+	yearFolders := findPlaceholders(body, yearKeys)
+	for _, f := range yearFolders {
+		cli.errorf("----> Replace placeholder %q to %q in LICENSE body\n", f, year)
+		body = strings.Replace(body, f, year, -1)
+	}
+
+	// Replace author name if needed
+	defaultAuthor, _ := gitconfig.GithubUser()
+	if len(defaultAuthor) == 0 {
+		defaultAuthor = DoNothing
+	}
+	body, err := cli.ReplacePlaceholder(body, nameKeys, "Input author name", defaultAuthor, option.author)
+	if err != nil {
+		return "", err
+	}
+
+	// Replace email if needed
+	defaultEmail, _ := gitconfig.Email()
+	if len(defaultEmail) == 0 {
+		defaultEmail = DoNothing
+	}
+	body, err = cli.ReplacePlaceholder(body, nameKeys, "Input email", defaultEmail, option.email)
+	if err != nil {
+		return "", err
+	}
+
+	// Replace project name if needed
+	body, err = cli.ReplacePlaceholder(body, projectKeys, "Input project name", DoNothing, option.project)
+	if err != nil {
+		return "", err
+	}
+
+	return body, nil
+}
+
+func (cli *CLI) errorf(format string, a ...interface{}) (n int, err error) {
+	return fmt.Fprintf(cli.errStream, format, a...)
 }
 
 var helpText = `Usage: license [option] [KEY]
 
   Generate LICENSE file. If you provide KEY, it will try to get LICENSE by
-  it. If you don't provide it, it will ask you to choose from avairable list.
-  You can check avairable LICESE list by '-list' option.
+  it. If you don't provide it, it will ask you to choose from available list.
+  You can check available LICESE list by '-list' option.
 
 Options:
 
-  -list               Show all avairable LICENSE list and quit.
+  -list               Show all available LICENSE list and quit.
                       It will fetch information from GitHub.
 
   -choose             Choose LICENSE like http://choosealicense.com/
