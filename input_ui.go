@@ -184,9 +184,9 @@ func (cli *CLI) ReplacePlaceholder(body string, keys []string, query, defaultRep
 	return body, nil
 }
 
-// Choose shows LICENSE description from http://choosealicense.com/.
-// And ask users to choose LICENSE. It returns key to fetch LICENSE file.
-// If something is wrong, returns error.
+// Choose shows the LICENSE description from http://choosealicense.com/.
+// And it asks users to choose a LICENSE. It returns the key to fetch the
+// LICENSE file. If something is wrong, returns the error.
 func (cli *CLI) Choose() (string, error) {
 	colorstring.Fprintf(cli.errStream, chooseText)
 
@@ -195,7 +195,7 @@ func (cli *CLI) Choose() (string, error) {
 		return "", err
 	}
 
-	// If the user selects 3, should ask whether GPL V2 or V3
+	// If the user selected 3, should ask whether GPL V2 or V3
 	if num == 3 {
 		var buf bytes.Buffer
 		buf.WriteString("\n")

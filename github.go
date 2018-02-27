@@ -12,7 +12,7 @@ func fetchLicenseList() ([]*github.License, error) {
 	// Create default client
 	client := github.NewClient(nil)
 
-	// Fetch list of LICENSE from Github API
+	// Fetch a list of LICENSEs from GitHub API
 	list, res, err := client.Licenses.List(context.Background())
 	if err != nil {
 		return nil, err
@@ -25,14 +25,14 @@ func fetchLicenseList() ([]*github.License, error) {
 	return list, nil
 }
 
-// fetchLicense fetches LICENSE file from Github API.
-// if something wrong returns error.
+// fetchLicense fetches a LICENSE file from GitHub API.
+// If something is wrong, it returns the error.
 func fetchLicense(key string) (string, error) {
 
 	// Create default client
 	client := github.NewClient(nil)
 
-	// Fetch a LICENSE from Github API
+	// Fetch a LICENSE from GitHub API
 	Debugf("Fetch license from GitHub API by key: %s", key)
 	license, res, err := client.Licenses.Get(context.Background(), key)
 	if err != nil {
