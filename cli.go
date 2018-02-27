@@ -233,7 +233,9 @@ func (cli *CLI) Run(args []string) int {
 			return ExitCodeError
 		}
 
-		key = *(list[num-1]).Key
+		l := list[num-1]
+		key = *l.Key
+		fmt.Fprintf(cli.outStream, "You chose %#q.\n", *l.Name)
 	}
 
 	home, err := homedir.Dir()
